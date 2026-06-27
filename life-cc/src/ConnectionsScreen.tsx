@@ -80,12 +80,12 @@ export function ConnectionsScreen() {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-sm font-medium text-zinc-500">Connections</h2>
+        <h2 className="text-sm font-medium text-zinc-400">Connections</h2>
         <button
           type="button"
           onClick={() => void accountsQuery.refetch()}
           disabled={accountsQuery.isFetching}
-          className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 disabled:opacity-60"
         >
           <RefreshCw size={16} className={accountsQuery.isFetching ? 'animate-spin' : ''} />
           Refresh
@@ -93,7 +93,7 @@ export function ConnectionsScreen() {
       </div>
 
       {accountsQuery.error ? (
-          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="flex items-center gap-2 rounded-lg border border-red-900 bg-red-950/40 px-3 py-2 text-sm text-red-400">
             <AlertCircle size={16} />
             {asErrorMessage(accountsQuery.error)}
           </div>
@@ -110,30 +110,30 @@ export function ConnectionsScreen() {
           return (
             <div
               key={connector.slug}
-              className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4"
+              className="flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900 p-4"
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <Icon size={20} className="text-zinc-500" />
+                  <Icon size={20} className="text-zinc-400" />
                   <div>
-                    <p className="text-sm font-medium text-zinc-900">{connector.label}</p>
+                    <p className="text-sm font-medium text-zinc-100">{connector.label}</p>
                     <p className="text-xs text-zinc-500">{connector.description}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   {isConnected ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-500">
                       <CheckCircle2 size={14} />
                       Connected
                     </span>
                   ) : needsReconnect ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-500">
                       <AlertCircle size={14} />
                       Needs reconnect
                     </span>
                   ) : connector.comingSoon ? (
-                    <span className="text-xs font-medium text-zinc-400">Coming soon</span>
+                    <span className="text-xs font-medium text-zinc-500">Coming soon</span>
                   ) : null}
 
                   {connector.comingSoon ? (
@@ -141,7 +141,7 @@ export function ConnectionsScreen() {
                       type="button"
                       disabled
                       title="Not set up yet"
-                      className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-400"
+                      className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-500"
                     >
                       Connect
                     </button>
@@ -150,7 +150,7 @@ export function ConnectionsScreen() {
                       type="button"
                       disabled={isBusy}
                       onClick={() => account && disconnectMutation.mutate({ slug: connector.slug, accountId: account.id })}
-                      className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 disabled:opacity-60"
+                      className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 disabled:opacity-60"
                     >
                       {isBusy ? <Loader2 size={14} className="animate-spin" /> : 'Disconnect'}
                     </button>
@@ -159,7 +159,7 @@ export function ConnectionsScreen() {
                       type="button"
                       disabled={isBusy || !organizationId}
                       onClick={() => connectMutation.mutate(connector.slug)}
-                      className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
                     >
                       {isBusy ? <Loader2 size={14} className="animate-spin" /> : null}
                       {needsReconnect ? 'Reconnect' : 'Connect'}
@@ -169,7 +169,7 @@ export function ConnectionsScreen() {
               </div>
 
               {error ? (
-                <p className="text-xs text-red-600">{error}</p>
+                <p className="text-xs text-red-400">{error}</p>
               ) : null}
             </div>
           )
