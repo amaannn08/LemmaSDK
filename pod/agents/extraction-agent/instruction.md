@@ -71,18 +71,24 @@ later workflow) decides what to do about each commitment.
     you reach for first.
   `detected_at` (the current timestamp).
 - **Backfill, don't just classify new items.** If, during the dedup check
-  below, you find an existing `commitments` row with no `category` set
-  (created before this column existed), classify and update it too — don't
-  limit category-setting to newly-discovered items.
+  below, you find an existing `commitments` row with no `category` and/or no
+  `dedup_key` set (created before those columns existed), fill both in on
+  that row too — don't limit this to newly-discovered items.
 - **Dedup is mandatory and comes first, not best-effort.** Before touching any
   connector, query the full `commitments` table once and hold the set of
   existing `(source_app, source_ref)` pairs in memory for the rest of this
   pass. Check every candidate item against that set before deciding to write
   — update the existing row instead of inserting if the underlying item
-  changed; otherwise skip it entirely. Do this for every item, no exceptions
-  — a missed check produces a visible duplicate row next pass. (The table
-  itself has no unique constraint on this pair, so this check is the only
-  thing preventing duplicates.)
+  changed; otherwise skip it entirely. Do this for every item, no exceptions.
+- **`dedup_key` backs this up with a real constraint.** Always set
+  `dedup_key` to the literal string `{source_app}:{source_ref}` (e.g.
+  `gmail:19f0846dff347486`) on every row you create — it has a database
+  unique constraint, so even if your own in-memory check above ever misses
+  something, a genuine duplicate write will fail outright instead of quietly
+  creating a second row. If a create fails because of this constraint,
+  that's expected — it means the row already exists; don't retry it as a
+  new row, just move on (and update the existing one instead if the
+  underlying item actually changed).
 
 ## How to respond
 

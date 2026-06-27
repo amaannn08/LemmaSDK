@@ -11,6 +11,8 @@
       "description": "manual = typed directly into the app's quick-add, not detected by extraction-agent" },
     { "name": "source_ref", "type": "TEXT", "max_length": 500,
       "description": "Id/link back to the original item (email id, file id, event id, ...)" },
+    { "name": "dedup_key", "type": "TEXT", "max_length": 520, "unique": true,
+      "description": "extraction-agent sets this to '{source_app}:{source_ref}' on every write — a real DB constraint backing the agent's own dedup check, not just relying on the model's judgment. Left unset for manual quick-add rows." },
     { "name": "due_date", "type": "DATE" },
     { "name": "status", "type": "ENUM", "required": true, "default": "open",
       "options": ["open", "done", "snoozed"] },
