@@ -6,7 +6,13 @@ export type CommitmentStatus = 'open' | 'done' | 'snoozed'
 
 export type Priority = 'low' | 'normal' | 'high'
 
-export type SourceApp = 'gmail' | 'google_calendar' | 'google_drive' | 'google_docs' | 'google_sheets'
+export type SourceApp =
+  | 'gmail'
+  | 'google_calendar'
+  | 'google_drive'
+  | 'google_docs'
+  | 'google_sheets'
+  | 'manual'
 
 export type Commitment = {
   id: string
