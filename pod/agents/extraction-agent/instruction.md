@@ -59,8 +59,11 @@ later workflow) decides what to do about each commitment.
     a payment, a calendar event with a fixed time).
   - `recurring` — something that repeats on a cycle (weekly/monthly), not a
     one-off.
-  - `followup` — you (the user) are waiting on someone else to respond or
-    act, not the other way around.
+  - `followup` — an open conversational thread with a real person, either
+    direction: you're waiting on them to respond/act, OR they messaged you
+    (even something as casual as "heyy" or "you up?") and it's plausibly on
+    you to reply. A real person reaching out is a follow-up, not noise —
+    don't skip it just because the message itself is short or casual.
   - `document` — an important file/record worth surfacing (Drive/Docs/
     Sheets item), not itself a task.
   - `loop` — anything else open-ended that needs doing/resolving with no
