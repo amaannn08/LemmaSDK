@@ -1,25 +1,13 @@
-import { useEffect } from 'react'
-import { useAgentTask } from 'lemma-sdk/react'
-import { AlertCircle, Loader2, Sparkles } from 'lucide-react'
-import { lemmaClient } from './lemma-client'
+import { AlertCircle, Loader2, RefreshCw, Sparkles } from 'lucide-react'
+import { useBriefing } from './BriefingContext'
 import { Markdown } from './markdown'
 
 // The Dashboard's "AI Briefing" card and the /ai route both render this —
-// one component, two mount sites, per the plan (no separate 4-quadrant layout).
+// one component, two mount sites. Backed by BriefingProvider (mounted once
+// at the app root) instead of running its own agent task, so navigating
+// away and back doesn't re-trigger the agent.
 export function AiBriefing() {
-  const { run, isRunning, streamingText, outputText, error } = useAgentTask({
-    client: lemmaClient,
-    agentName: 'briefing-agent',
-    parseOutput: false,
-  })
-
-  useEffect(() => {
-    void run("Give me today's briefing.")
-    // Run once on mount only — re-running on every render would spam the agent.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const text = outputText || streamingText
+  const { isRunning, text, error, refresh } = useBriefing()
 
   return (
     <div className="rounded-xl border border-teal-900 bg-linear-to-br from-teal-950/40 to-zinc-900 p-5">
@@ -27,7 +15,17 @@ export function AiBriefing() {
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-teal-600">
           <Sparkles size={14} className="text-white" />
         </div>
-        <span className="text-sm font-bold text-teal-400">Daily Briefing</span>
+        <span className="flex-1 text-sm font-bold text-teal-400">Daily Briefing</span>
+        <button
+          type="button"
+          onClick={refresh}
+          disabled={isRunning}
+          aria-label="Refresh briefing"
+          title="Refresh briefing"
+          className="text-zinc-500 hover:text-zinc-300 disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={isRunning ? 'animate-spin' : ''} />
+        </button>
       </div>
 
       {error ? (

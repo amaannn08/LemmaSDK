@@ -10,6 +10,8 @@ import { Dashboard } from './Dashboard'
 import { CategoryView } from './CategoryView'
 import { AiBriefing } from './AiBriefing'
 import { AskAi } from './AskAi'
+import { CommitmentsProvider } from './CommitmentsContext'
+import { BriefingProvider } from './BriefingContext'
 import './styles.css'
 
 // One QueryClient per app. Connector accounts/pod info are fetched through it
@@ -27,28 +29,32 @@ createRoot(document.getElementById('root')!).render(
           </main>
         }
       >
-        <BrowserRouter>
-          <Routes>
-            <Route element={<Layout />}>
-              <Route index element={<ConnectionsScreen />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="loops" element={<CategoryView category="loop" title="Open Loops" />} />
-              <Route path="deadlines" element={<CategoryView category="deadline" title="Deadlines" />} />
-              <Route path="recurring" element={<CategoryView category="recurring" title="Recurring Tasks" />} />
-              <Route path="documents" element={<CategoryView category="document" title="Documents" />} />
-              <Route path="followups" element={<CategoryView category="followup" title="Follow-ups" />} />
-              <Route
-                path="ai"
-                element={
-                  <div className="flex flex-col gap-4">
-                    <AiBriefing />
-                    <AskAi />
-                  </div>
-                }
-              />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+        <CommitmentsProvider>
+          <BriefingProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route index element={<ConnectionsScreen />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="loops" element={<CategoryView category="loop" title="Open Loops" />} />
+                  <Route path="deadlines" element={<CategoryView category="deadline" title="Deadlines" />} />
+                  <Route path="recurring" element={<CategoryView category="recurring" title="Recurring Tasks" />} />
+                  <Route path="documents" element={<CategoryView category="document" title="Documents" />} />
+                  <Route path="followups" element={<CategoryView category="followup" title="Follow-ups" />} />
+                  <Route
+                    path="ai"
+                    element={
+                      <div className="flex flex-col gap-4">
+                        <AiBriefing />
+                        <AskAi />
+                      </div>
+                    }
+                  />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </BriefingProvider>
+        </CommitmentsProvider>
       </AuthGuard>
     </QueryClientProvider>
   </React.StrictMode>,

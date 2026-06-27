@@ -10,7 +10,7 @@ import {
   Sparkles,
   Triangle,
 } from 'lucide-react'
-import { useCommitments } from './useCommitments'
+import { useCommitments } from './CommitmentsContext'
 import { SyncButton } from './SyncButton'
 import { CATEGORY_NAV } from './types'
 

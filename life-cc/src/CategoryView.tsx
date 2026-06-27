@@ -1,6 +1,6 @@
 import { AlertCircle, Inbox } from 'lucide-react'
 import { CommitmentItem } from './CommitmentItem'
-import { useCommitments } from './useCommitments'
+import { useCommitments } from './CommitmentsContext'
 import type { Category } from './types'
 
 function asErrorMessage(error: unknown) {
