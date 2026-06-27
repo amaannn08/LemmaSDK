@@ -38,7 +38,7 @@ export function SyncButton() {
         {isRunning ? 'Checking…' : 'Check now'}
       </button>
 
-      {showResult && !isRunning && (outputText || error) ? (
+      {showResult ? (
         <div className="absolute right-0 top-full z-10 mt-2 max-h-96 w-80 overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-900 p-4 text-sm shadow-xl">
           <button
             type="button"
@@ -48,8 +48,17 @@ export function SyncButton() {
           >
             <X size={14} />
           </button>
-          {error ? (
-            <p className="text-red-400">{error.message}</p>
+          {isRunning ? (
+            <div className="flex items-center gap-2 text-zinc-400">
+              <Loader2 size={14} className="animate-spin" />
+              Scanning Gmail, Calendar, Drive, Docs, Sheets… this can take up to a minute.
+            </div>
+          ) : error ? (
+            <p className="text-red-400">
+              {/connect|timeout|timed out/i.test(error.message)
+                ? 'The model request timed out — likely a brief network hiccup, not a bug. Click "Check now" to retry.'
+                : error.message}
+            </p>
           ) : (
             <div className="text-zinc-300">
               <Markdown text={outputText} />
