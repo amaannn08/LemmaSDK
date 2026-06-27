@@ -1,7 +1,7 @@
 {
   "name": "extraction-sweep",
   "schedule_type": "TIME",
-  "config": { "cron": "*/30 * * * *" },
+  "config": { "cron": "*/5 * * * *" },
   "agent_name": "extraction-agent",
   "is_active": true,
   "visibility": "POD"
