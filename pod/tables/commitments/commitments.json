@@ -1,0 +1,24 @@
+{
+  "name": "commitments",
+  "primary_key_column": "id",
+  "enable_rls": true,
+  "visibility": "POD",
+  "columns": [
+    { "name": "title", "type": "TEXT", "required": true, "max_length": 240 },
+    { "name": "description", "type": "TEXT" },
+    { "name": "source_app", "type": "ENUM", "required": true,
+      "options": ["gmail", "google_calendar", "google_drive", "google_docs", "google_sheets"] },
+    { "name": "source_ref", "type": "TEXT", "max_length": 500,
+      "description": "Id/link back to the original item (email id, file id, event id, ...)" },
+    { "name": "due_date", "type": "DATE" },
+    { "name": "status", "type": "ENUM", "required": true, "default": "open",
+      "options": ["open", "done", "snoozed"] },
+    { "name": "priority", "type": "ENUM", "default": "normal",
+      "options": ["low", "normal", "high"] },
+    { "name": "category", "type": "ENUM",
+      "options": ["loop", "deadline", "recurring", "document", "followup"],
+      "description": "Open Loop / Deadline / Recurring Task / Document / Follow-up — drives which sidebar section this shows up in" },
+    { "name": "detected_at", "type": "DATETIME", "required": true }
+  ],
+  "config": {}
+}
