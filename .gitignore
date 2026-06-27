@@ -1,0 +1,9 @@
+life-cc/node_modules
+life-cc/dist
+**/.env
+**/.env.local
+**/.env.*.local
+*.tsbuildinfo
+.DS_Store
+.claude
+.agents
