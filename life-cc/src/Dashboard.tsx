@@ -1,132 +1,154 @@
-import { useLiveRecords, useUpdateRecord } from 'lemma-sdk/react'
-import { AlertCircle, Calendar, CheckCircle2, Clock, ExternalLink, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useCreateRecord } from 'lemma-sdk/react'
+import { CalendarClock, CircleDashed, FileText, Loader2, MessageCircleMore, Repeat, Zap } from 'lucide-react'
 import { lemmaClient } from './lemma-client'
+import { useCommitments } from './useCommitments'
+import { CommitmentItem } from './CommitmentItem'
+import { AiBriefing } from './AiBriefing'
+import { KpiCard, type KpiTone } from './components/KpiCard'
+import { CATEGORY_NAV, type Category } from './types'
 
-type Commitment = {
-  id: string
-  title: string
-  description: string | null
-  source_app: string
-  source_ref: string | null
-  due_date: string | null
-  status: 'open' | 'done' | 'snoozed'
-  priority: 'low' | 'normal' | 'high'
-  detected_at: string
+const KPI_META: Record<Exclude<Category, 'document'>, { icon: typeof CircleDashed; tone: KpiTone; sublabel: string }> = {
+  loop: { icon: CircleDashed, tone: 'red', sublabel: 'Unresolved commitments' },
+  deadline: { icon: CalendarClock, tone: 'amber', sublabel: 'Next 30 days' },
+  recurring: { icon: Repeat, tone: 'gold', sublabel: 'Active cycles' },
+  followup: { icon: MessageCircleMore, tone: 'blue', sublabel: 'Waiting on others' },
+}
+// Document isn't a KPI tile in the mockup (it's a sidebar section, not a top-line metric) — 4 tiles, not 5.
+const KPI_CATEGORIES: Exclude<Category, 'document'>[] = ['loop', 'deadline', 'recurring', 'followup']
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10)
 }
 
-const PRIORITY_STYLE: Record<Commitment['priority'], string> = {
-  high: 'text-red-600 bg-red-50 border-red-200',
-  normal: 'text-amber-600 bg-amber-50 border-amber-200',
-  low: 'text-zinc-500 bg-zinc-50 border-zinc-200',
-}
+function QuickAdd() {
+  const [title, setTitle] = useState('')
+  const [category, setCategory] = useState<Category>('loop')
+  const { create, isSubmitting } = useCreateRecord({ client: lemmaClient, tableName: 'commitments' })
 
-function asErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error)
-}
-
-function CommitmentRow({ commitment }: { commitment: Commitment }) {
-  const { update, isSubmitting } = useUpdateRecord({
-    client: lemmaClient,
-    tableName: 'commitments',
-    recordId: commitment.id,
-  })
+  function submit() {
+    const trimmed = title.trim()
+    if (!trimmed) return
+    void create({
+      title: trimmed,
+      category,
+      source_app: 'manual',
+      status: category === 'deadline' ? 'open' : 'open',
+      priority: 'normal',
+      detected_at: new Date().toISOString(),
+    }).then(() => setTitle(''))
+  }
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium text-zinc-900">{commitment.title}</p>
-          {commitment.description ? (
-            <p className="text-xs text-zinc-500">{commitment.description}</p>
-          ) : null}
-          <div className="flex items-center gap-3 text-xs text-zinc-400">
-            <span className="capitalize">{commitment.source_app.replace('_', ' ')}</span>
-            {commitment.due_date ? (
-              <span className="inline-flex items-center gap-1">
-                <Calendar size={12} />
-                {commitment.due_date}
-              </span>
-            ) : null}
-            <span
-              className={`inline-flex items-center rounded-full border px-2 py-0.5 capitalize ${PRIORITY_STYLE[commitment.priority]}`}
-            >
-              {commitment.priority}
-            </span>
-          </div>
-        </div>
+    <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+      <Zap size={16} className="shrink-0 text-teal-500" />
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && submit()}
+        placeholder='Try: "Renew passport" or "Follow up with Rahul about the repo"'
+        className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-teal-600"
+      />
+      <select
+        value={category}
+        onChange={(e) => setCategory(e.target.value as Category)}
+        className="rounded-lg border border-zinc-700 bg-zinc-800 px-2 py-2 text-xs text-zinc-300 outline-none"
+      >
+        {CATEGORY_NAV.map(({ category: c, label }) => (
+          <option key={c} value={c}>
+            {label}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={submit}
+        disabled={isSubmitting || !title.trim()}
+        className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+      >
+        {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : null}
+        Add
+      </button>
+    </div>
+  )
+}
 
-        <div className="flex shrink-0 items-center gap-2">
-          {isSubmitting ? (
-            <Loader2 size={16} className="animate-spin text-zinc-400" />
-          ) : (
-            <>
-              <button
-                type="button"
-                aria-label="Snooze"
-                title="Snooze"
-                onClick={() => void update({ status: 'snoozed' })}
-                className="rounded-lg border border-zinc-200 p-1.5 text-zinc-500 hover:bg-zinc-50"
-              >
-                <Clock size={14} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                aria-label="Mark done"
-                title="Mark done"
-                onClick={() => void update({ status: 'done' })}
-                className="rounded-lg border border-zinc-200 p-1.5 text-emerald-600 hover:bg-emerald-50"
-              >
-                <CheckCircle2 size={14} aria-hidden="true" />
-              </button>
-            </>
-          )}
-        </div>
+function CategoryPreview({ category, label, path }: { category: Category; label: string; path: string }) {
+  const { records } = useCommitments({ category })
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900">
+      <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-3">
+        <span className="text-sm font-semibold text-zinc-200">{label}</span>
+        <Link to={path} className="text-xs text-zinc-500 hover:text-teal-400">
+          View all
+        </Link>
+      </div>
+      <div className="px-5 py-2">
+        {records.length === 0 ? (
+          <p className="py-3 text-xs text-zinc-600">Nothing here yet.</p>
+        ) : (
+          records.slice(0, 3).map((c) => <CommitmentItem key={c.id} commitment={c} mode="compact" />)
+        )}
       </div>
     </div>
   )
 }
 
 export function Dashboard() {
-  const { records, isLoading, error, liveStatus } = useLiveRecords<Commitment>({
-    client: lemmaClient,
-    tableName: 'commitments',
-    filters: [{ field: 'status', op: 'eq', value: 'open' }],
-    sort: [{ field: 'due_date', direction: 'asc' }],
-  })
+  const { records: openLoops } = useCommitments({ category: 'loop' })
+  const { records: deadlines } = useCommitments({ category: 'deadline' })
+  const { records: recurring } = useCommitments({ category: 'recurring' })
+  const { records: followups } = useCommitments({ category: 'followup' })
+  const today = todayISO()
+  const overdueLoops = openLoops.filter((c) => c.due_date && c.due_date < today).length
+  const dueToday = deadlines.filter((c) => c.due_date === today).length
+
+  const counts: Record<Category, number> = {
+    loop: openLoops.length,
+    deadline: deadlines.length,
+    recurring: recurring.length,
+    followup: followups.length,
+    document: 0,
+  }
+  const badges: Record<Category, string> = {
+    loop: overdueLoops > 0 ? `${overdueLoops} overdue` : 'On track',
+    deadline: dueToday > 0 ? `${dueToday} today` : 'Upcoming',
+    recurring: 'Active',
+    followup: followups.length > 0 ? 'Waiting' : 'Clear',
+    document: '',
+  }
 
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-sm font-medium text-zinc-500">Dashboard</h2>
-        <span className="text-xs text-zinc-400">{liveStatus === 'open' ? 'Live' : liveStatus}</span>
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {KPI_CATEGORIES.map((category) => {
+          const meta = KPI_META[category]
+          const navItem = CATEGORY_NAV.find((n) => n.category === category)!
+          return (
+            <KpiCard
+              key={category}
+              icon={meta.icon}
+              tone={meta.tone}
+              value={counts[category]}
+              label={navItem.label}
+              sublabel={meta.sublabel}
+              badgeText={badges[category]}
+              progressPercent={Math.min(100, counts[category] * 20)}
+            />
+          )
+        })}
       </div>
 
-      {error ? (
-        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          <AlertCircle size={16} />
-          {asErrorMessage(error)}
-        </div>
-      ) : null}
+      <AiBriefing />
 
-      {isLoading ? (
-        <p className="text-sm text-zinc-500">Loading…</p>
-      ) : records.length === 0 ? (
-        <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-6">
-          <p className="text-sm text-zinc-600">
-            Nothing open right now. The extraction agent sweeps your connected services every 30
-            minutes — deadlines and follow-ups it finds will show up here.
-          </p>
-        </div>
-      ) : (
-        records.map((commitment) => <CommitmentRow key={commitment.id} commitment={commitment} />)
-      )}
+      <QuickAdd />
 
-      <a
-        href="/"
-        className="inline-flex items-center gap-1 self-start text-xs text-zinc-400 hover:text-zinc-600"
-      >
-        Manage connections <ExternalLink size={12} />
-      </a>
-    </section>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {CATEGORY_NAV.map(({ category, label, path }) => (
+          <CategoryPreview key={category} category={category} label={label} path={path} />
+        ))}
+      </div>
+    </div>
   )
 }
