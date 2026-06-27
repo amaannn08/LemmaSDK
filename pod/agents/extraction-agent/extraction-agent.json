@@ -1,0 +1,17 @@
+{
+  "name": "extraction-agent",
+  "description": "Scans connected Google services for deadlines, follow-ups, and important documents and records them in commitments.",
+  "instruction": { "$file": "instruction.md" },
+  "toolsets": ["POD", "WORKSPACE_CLI"],
+  "visibility": "POD",
+  "agent_runtime": { "profile_id": "019f0826-a89d-7198-bc00-9c3a94fe600b" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] },
+    { "resource_type": "connector", "resource_name": "gmail", "permission_ids": ["connector.use"] },
+    { "resource_type": "connector", "resource_name": "google_calendar", "permission_ids": ["connector.use"] },
+    { "resource_type": "connector", "resource_name": "google_drive", "permission_ids": ["connector.use"] },
+    { "resource_type": "connector", "resource_name": "google_docs", "permission_ids": ["connector.use"] },
+    { "resource_type": "connector", "resource_name": "google_sheets", "permission_ids": ["connector.use"] }
+  ] }
+}
