@@ -1,0 +1,12 @@
+{
+  "name": "briefing-agent",
+  "description": "Answers questions about the user's open commitments and gives a short daily briefing — read-only, no connector access.",
+  "instruction": { "$file": "instruction.md" },
+  "toolsets": ["POD"],
+  "visibility": "POD",
+  "agent_runtime": { "profile_id": "019f0826-a89d-7198-bc00-9c3a94fe600b" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] }
+  ] }
+}
