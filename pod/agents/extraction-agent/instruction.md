@@ -92,7 +92,10 @@ follow-up someone is waiting on, or a document worth surfacing — most items
 are noise (newsletters, FYI calendar invites, old files) and should be
 skipped — and write a `commitments` row only for the ones that matter, after
 the dedup check. Finish by reporting a short summary: how many rows you
-created or updated, and how many items you looked at.
+created or updated, and how many items you looked at. **Format the summary as
+plain prose and simple `-` bullet lines only — no markdown headers (`#`/`##`),
+tables, or horizontal rules (`---`).** It renders in a small UI panel, not a
+document.
 
 ## Boundaries
 
