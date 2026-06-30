@@ -1,6 +1,7 @@
-import { useUpdateRecord, useDeleteRecord } from 'lemma-sdk/react'
-import { Calendar, CheckCircle2, Clock, Loader2, Trash2 } from 'lucide-react'
-import { lemmaClient } from './lemma-client'
+import { useMutation } from '@tanstack/react-query'
+import { Calendar, CheckCircle2, Clock, Loader2, RotateCcw } from 'lucide-react'
+import { ActionTrigger } from './actions/ActionTrigger'
+import { updateCommitmentStatus } from './pod-functions'
 import type { Commitment } from './types'
 
 const PRIORITY_STYLE: Record<Commitment['priority'], string> = {
@@ -20,17 +21,10 @@ export function CommitmentItem({
   commitment: Commitment
   mode: 'compact' | 'full'
 }) {
-  const { update, isSubmitting: isUpdating } = useUpdateRecord({
-    client: lemmaClient,
-    tableName: 'commitments',
-    recordId: commitment.id,
+  const statusMutation = useMutation({
+    mutationFn: (status: Commitment['status']) => updateCommitmentStatus({ commitment_id: commitment.id, status }),
   })
-  const { remove, isSubmitting: isDeleting } = useDeleteRecord({
-    client: lemmaClient,
-    tableName: 'commitments',
-    recordId: commitment.id,
-  })
-  const busy = isUpdating || isDeleting
+  const busy = statusMutation.isPending
   const overdue = isOverdue(commitment)
 
   return (
@@ -50,10 +44,17 @@ export function CommitmentItem({
               {commitment.due_date}
             </span>
           ) : null}
+          {commitment.category === 'recurring' ? <span className="font-medium text-blue-400">Recurring</span> : null}
           {overdue ? <span className="font-medium text-red-500">Overdue</span> : null}
+          {commitment.status === 'snoozed' ? <span className="font-medium text-amber-500">Snoozed</span> : null}
         </div>
         {mode === 'full' && commitment.description ? (
           <p className="mt-1 text-xs text-zinc-400">{commitment.description}</p>
+        ) : null}
+        {mode === 'full' && statusMutation.error ? (
+          <p className="mt-2 text-xs text-red-400">
+            {statusMutation.error instanceof Error ? statusMutation.error.message : String(statusMutation.error)}
+          </p>
         ) : null}
       </div>
 
@@ -69,32 +70,24 @@ export function CommitmentItem({
             <Loader2 size={14} className="animate-spin text-zinc-500" />
           ) : (
             <>
+              <ActionTrigger commitment={commitment} />
               <button
                 type="button"
-                aria-label="Snooze"
-                title="Snooze"
-                onClick={() => void update({ status: 'snoozed' })}
+                aria-label={commitment.status === 'snoozed' ? 'Unsnooze' : 'Snooze'}
+                title={commitment.status === 'snoozed' ? 'Unsnooze' : 'Snooze'}
+                onClick={() => statusMutation.mutate(commitment.status === 'snoozed' ? 'open' : 'snoozed')}
                 className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
               >
-                <Clock size={14} />
+                {commitment.status === 'snoozed' ? <RotateCcw size={14} /> : <Clock size={14} />}
               </button>
               <button
                 type="button"
                 aria-label="Mark done"
                 title="Mark done"
-                onClick={() => void update({ status: 'done' })}
+                onClick={() => statusMutation.mutate('done')}
                 className="rounded-md p-1.5 text-emerald-500 hover:bg-emerald-950"
               >
                 <CheckCircle2 size={14} />
-              </button>
-              <button
-                type="button"
-                aria-label="Delete"
-                title="Delete"
-                onClick={() => void remove()}
-                className="rounded-md p-1.5 text-zinc-400 hover:bg-red-950 hover:text-red-400"
-              >
-                <Trash2 size={14} />
               </button>
             </>
           )}

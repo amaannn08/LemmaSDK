@@ -38,6 +38,8 @@ export function AiBriefing() {
           <Loader2 size={14} className="animate-spin" />
           Thinking…
         </div>
+      ) : !text ? (
+        <div className="text-sm text-zinc-500">No briefing yet. Refresh when you want one.</div>
       ) : (
         <div className="text-sm leading-relaxed text-zinc-300">
           <Markdown text={text} />

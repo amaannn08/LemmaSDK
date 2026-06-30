@@ -1,12 +1,22 @@
 {
   "name": "briefing-agent",
-  "description": "Answers questions about the user's open commitments and gives a short daily briefing — read-only, no connector access.",
+  "description": "Judges whether the daily briefing needs regenerating and composes it. Read-only; the write_briefing function persists the result.",
   "instruction": { "$file": "instruction.md" },
   "toolsets": ["POD"],
   "visibility": "POD",
-  "agent_runtime": { "profile_id": "019f0826-a89d-7198-bc00-9c3a94fe600b" },
+  "agent_runtime": { "profile_id": "019f0d02-163c-71ae-838f-57c2d2e925e9", "model_name": "gemini-2.5-flash" },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "regenerate": { "type": "boolean", "description": "true if the briefing should be (re)written, false to leave the current one untouched" },
+      "content": { "type": "string", "description": "the briefing prose when regenerate is true; empty string when false" }
+    },
+    "required": ["regenerate", "content"]
+  },
   "permissions": { "grants": [
     { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] },
+    { "resource_type": "datastore_table", "resource_name": "briefing",
       "permission_ids": ["datastore.table.read", "datastore.record.read"] }
   ] }
 }

@@ -35,6 +35,30 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   followup: 'Follow-up',
 }
 
+export const SOURCE_APP_LABEL: Record<Exclude<SourceApp, 'manual'>, string> = {
+  gmail: 'Gmail',
+  google_calendar: 'Calendar',
+  google_drive: 'Drive',
+  google_docs: 'Docs',
+  google_sheets: 'Sheets',
+}
+
+export type CommitmentViewStatus = 'open' | 'snoozed' | 'all'
+
+export type SyncProgress = {
+  id: string
+  sync_run_id: string
+  source_app: Exclude<SourceApp, 'manual'>
+  status: SyncProgressStatus
+  items_seen: number
+  items_written: number
+  category_summary: string | null
+  error_message?: string | null
+  updated_at: string
+}
+
+export type SyncProgressStatus = 'pending' | 'running' | 'done' | 'skipped' | 'failed'
+
 export const CATEGORY_NAV: { category: Category; label: string; path: string }[] = [
   { category: 'loop', label: 'Open Loops', path: '/loops' },
   { category: 'deadline', label: 'Deadlines', path: '/deadlines' },

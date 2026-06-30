@@ -1,0 +1,16 @@
+{
+  "name": "reply-suggestion-agent",
+  "description": "Read-only agent for composing Gmail reply suggestions from a compact sanitized prompt payload. No tools and no side effects.",
+  "instruction": {
+    "$file": "instruction.md"
+  },
+  "toolsets": ["POD"],
+  "visibility": "POD",
+  "agent_runtime": {
+    "profile_id": "019f0d02-163c-71ae-838f-57c2d2e925e9",
+    "model_name": "gemini-2.5-flash"
+  },
+  "permissions": {
+    "grants": []
+  }
+}

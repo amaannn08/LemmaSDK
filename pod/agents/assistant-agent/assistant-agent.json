@@ -1,0 +1,27 @@
+{
+  "name": "assistant-agent",
+  "description": "Conversational front door to the Life Command Centre during the hardening rollout. Answers questions about commitments and current priorities, but does not execute product mutations.",
+  "instruction": {
+    "$file": "instruction.md"
+  },
+  "toolsets": [
+    "POD"
+  ],
+  "visibility": "POD",
+  "agent_runtime": {
+    "profile_id": "019f0d02-163c-71ae-838f-57c2d2e925e9",
+    "model_name": "gemini-2.5-flash"
+  },
+  "permissions": {
+    "grants": [
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "commitments",
+        "permission_ids": [
+          "datastore.table.read",
+          "datastore.record.read"
+        ]
+      }
+    ]
+  }
+}

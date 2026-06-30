@@ -1,7 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthGuard } from 'lemma-sdk/react'
 import { lemmaClient } from './lemma-client'
 import { Layout } from './Layout'
@@ -34,13 +34,15 @@ createRoot(document.getElementById('root')!).render(
             <BrowserRouter>
               <Routes>
                 <Route element={<Layout />}>
-                  <Route index element={<ConnectionsScreen />} />
+                  <Route index element={<Navigate to="/dashboard" replace />} />
                   <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="connections" element={<ConnectionsScreen />} />
                   <Route path="loops" element={<CategoryView category="loop" title="Open Loops" />} />
                   <Route path="deadlines" element={<CategoryView category="deadline" title="Deadlines" />} />
                   <Route path="recurring" element={<CategoryView category="recurring" title="Recurring Tasks" />} />
                   <Route path="documents" element={<CategoryView category="document" title="Documents" />} />
                   <Route path="followups" element={<CategoryView category="followup" title="Follow-ups" />} />
+                  <Route path="snoozed" element={<CategoryView title="Snoozed" status="snoozed" />} />
                   <Route
                     path="ai"
                     element={

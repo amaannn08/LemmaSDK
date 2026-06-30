@@ -1,32 +1,52 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import { useLiveRecords } from 'lemma-sdk/react'
 import { lemmaClient } from './lemma-client'
-import type { Category, Commitment } from './types'
+import type { Category, Commitment, CommitmentViewStatus } from './types'
+
+const OPEN_COMMITMENT_LIMIT = 500
+const SNOOZED_COMMITMENT_LIMIT = 200
 
 type CommitmentsContextValue = {
-  records: Commitment[]
+  openRecords: Commitment[]
+  snoozedRecords: Commitment[]
+  isOpenPartial: boolean
+  openLimit: number
   isLoading: boolean
   error: Error | null
 }
 
 const CommitmentsContext = createContext<CommitmentsContextValue | null>(null)
 
-// One live subscription for the whole app, mounted once at the root (so it
-// survives route changes instead of every page re-subscribing). Every view
-// previously called useLiveRecords itself — Layout's sidebar badges, each of
-// Dashboard's 4 KPI cards, each of its 5 category previews, and every
-// CategoryView — meaning up to a dozen redundant websocket subscriptions to
-// the same table at once, which is both wasteful and the likely cause of the
-// sidebar badge lagging behind real data.
 export function CommitmentsProvider({ children }: { children: ReactNode }) {
-  const { records, isLoading, error } = useLiveRecords<Commitment>({
+  const openState = useLiveRecords<Commitment>({
     client: lemmaClient,
     tableName: 'commitments',
     filters: [{ field: 'status', op: 'eq', value: 'open' }],
     sort: [{ field: 'due_date', direction: 'asc' }],
+    limit: OPEN_COMMITMENT_LIMIT,
+    reconcile: 'refetch',
   })
+  const snoozedState = useLiveRecords<Commitment>({
+    client: lemmaClient,
+    tableName: 'commitments',
+    filters: [{ field: 'status', op: 'eq', value: 'snoozed' }],
+    sort: [{ field: 'due_date', direction: 'asc' }],
+    limit: SNOOZED_COMMITMENT_LIMIT,
+    reconcile: 'refetch',
+  })
+  const openRecords = openState.records
+  const snoozedRecords = snoozedState.records
+  const isLoading = openState.isLoading || snoozedState.isLoading
+  const error = openState.error ?? snoozedState.error
+  const isOpenPartial = openRecords.length >= OPEN_COMMITMENT_LIMIT
 
-  return <CommitmentsContext.Provider value={{ records, isLoading, error }}>{children}</CommitmentsContext.Provider>
+  return (
+    <CommitmentsContext.Provider
+      value={{ openRecords, snoozedRecords, isOpenPartial, openLimit: OPEN_COMMITMENT_LIMIT, isLoading, error }}
+    >
+      {children}
+    </CommitmentsContext.Provider>
+  )
 }
 
 export function useAllCommitments(): CommitmentsContextValue {
@@ -35,12 +55,20 @@ export function useAllCommitments(): CommitmentsContextValue {
   return ctx
 }
 
-// Drop-in replacement for the old per-component useLiveRecords call: same
-// shape, but filters the one shared list instead of opening a new subscription.
-export function useCommitments({ category }: { category?: Category } = {}) {
-  const { records, isLoading, error } = useAllCommitments()
+export function useCommitments({
+  category,
+  status = 'open',
+}: {
+  category?: Category
+  status?: CommitmentViewStatus
+} = {}) {
+  const { openRecords, snoozedRecords, isLoading, error } = useAllCommitments()
+  const allRecords = [...openRecords, ...snoozedRecords]
+  const scopedRecords =
+    status === 'all' ? allRecords : status === 'snoozed' ? snoozedRecords : openRecords
+
   return {
-    records: category ? records.filter((r) => r.category === category) : records,
+    records: category ? scopedRecords.filter((r) => r.category === category) : scopedRecords,
     isLoading,
     error,
   }

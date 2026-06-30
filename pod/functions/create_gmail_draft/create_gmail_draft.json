@@ -1,0 +1,11 @@
+{
+  "name": "create_gmail_draft",
+  "description": "Creates a Gmail draft reply through a typed backend contract. This path never sends email.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] },
+    { "resource_type": "connector", "resource_name": "gmail", "permission_ids": ["connector.use"] }
+  ] }
+}

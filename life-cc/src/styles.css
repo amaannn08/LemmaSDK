@@ -1,5 +1,85 @@
 @import "tailwindcss";
 
+/* Design tokens — refined cool-charcoal neutrals with more depth between the
+   app background (zinc-950) and surfaces (zinc-900) so cards visibly lift,
+   plus a touch more contrast on borders and secondary text. Overriding the
+   zinc/teal scales here re-themes every existing utility class in the app at
+   once — no per-component color edits. Teal stays the brand accent. */
+@theme {
+  --color-zinc-50: #f7f7f9;
+  --color-zinc-100: #ececef;
+  --color-zinc-200: #d6d6dd;
+  --color-zinc-300: #b4b4bf;
+  --color-zinc-400: #8b8b98;
+  --color-zinc-500: #6c6c79;
+  --color-zinc-600: #4e4e59;
+  --color-zinc-700: #33333c;
+  --color-zinc-800: #26262e;
+  --color-zinc-900: #16161b;
+  --color-zinc-950: #0a0a0e;
+
+  --color-teal-300: #5eead4;
+  --color-teal-400: #2dd4bf;
+  --color-teal-500: #14c4ad;
+  --color-teal-600: #0eae99;
+  --color-teal-700: #0c8478;
+}
+
 body {
-  background-color: #09090b; /* zinc-950 — avoids a light flash before Layout mounts */
+  background-color: var(--color-zinc-950); /* avoids a light flash before Layout mounts */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tabular figures everywhere numbers carry meaning (KPIs, counts, dates). */
+.tabular-nums,
+input[type="date"] {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background-color: color-mix(in oklab, var(--color-teal-500) 35%, transparent);
+  color: var(--color-zinc-50);
+}
+
+/* Slim, theme-matched scrollbars instead of the chunky default. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-zinc-700) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-zinc-700);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-zinc-600);
+}
+
+/* One consistent, accessible focus ring on every interactive element —
+   replaces the browser default outline app-wide. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-zinc-950), 0 0 0 4px var(--color-teal-500);
+  border-radius: 0.5rem;
+}
+
+/* Subtle, uniform easing on the interactive states components already declare
+   (hover bg/text, opacity). Keeps transitions consistent without each
+   component re-specifying duration. */
+button,
+a,
+input,
+select,
+textarea {
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

@@ -1,0 +1,16 @@
+{
+  "name": "extract_commitments",
+  "description": "Deterministic sweep of Gmail/Calendar/Drive: parse, dedup, rule-classify, write new rows to commitments. Zero LLM (no token burn, no 429 risk). Optional sync_run_id streams per-connector progress to sync_progress for the app's Check-now UI.",
+  "type": "JOB",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] },
+    { "resource_type": "datastore_table", "resource_name": "sync_progress",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] },
+    { "resource_type": "connector", "resource_name": "gmail", "permission_ids": ["connector.use"] },
+    { "resource_type": "connector", "resource_name": "google_calendar", "permission_ids": ["connector.use"] },
+    { "resource_type": "connector", "resource_name": "google_drive", "permission_ids": ["connector.use"] },
+    { "resource_type": "agent", "resource_name": "email-classifier", "permission_ids": ["agent.execute", "agent.read"] }
+  ] }
+}

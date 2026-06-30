@@ -1,0 +1,20 @@
+{
+  "name": "sync_progress",
+  "primary_key_column": "id",
+  "enable_rls": true,
+  "visibility": "POD",
+  "columns": [
+    { "name": "sync_run_id", "type": "TEXT", "required": true, "max_length": 64 },
+    { "name": "source_app", "type": "ENUM", "required": true,
+      "options": ["gmail", "google_calendar", "google_drive", "google_docs", "google_sheets"] },
+    { "name": "status", "type": "ENUM", "required": true, "default": "pending",
+      "options": ["pending", "running", "done", "skipped", "failed"] },
+    { "name": "items_seen", "type": "INTEGER", "default": 0 },
+    { "name": "items_written", "type": "INTEGER", "default": 0 },
+    { "name": "category_summary", "type": "TEXT", "max_length": 240,
+      "description": "Short free-text breakdown of categories found this connector, e.g. '2 followups, 1 deadline' — set when status moves to done." },
+    { "name": "error_message", "type": "TEXT", "max_length": 240,
+      "description": "Failure detail when status = failed. Skipped/not-connected rows leave this empty." }
+  ],
+  "config": {}
+}

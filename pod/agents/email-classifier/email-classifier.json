@@ -1,0 +1,34 @@
+{
+  "name": "email-classifier",
+  "description": "Batch-classifies email metadata to decide which items are actionable commitments. Read-only, no tools.",
+  "instruction": { "$file": "instruction.md" },
+  "toolsets": ["POD"],
+  "visibility": "POD",
+  "agent_runtime": {
+    "profile_id": "019f0d02-163c-71ae-838f-57c2d2e925e9",
+    "model_name": "gemini-2.5-flash"
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["decisions"],
+    "properties": {
+      "decisions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["index", "is_commitment"],
+          "properties": {
+            "index":          { "type": "integer" },
+            "is_commitment":  { "type": "boolean" },
+            "title":          { "type": "string" },
+            "due_date":       { "type": ["string", "null"] },
+            "category":       { "type": "string", "enum": ["deadline", "followup", "loop"] },
+            "priority":       { "type": "string", "enum": ["high", "normal", "low"] },
+            "description":    { "type": ["string", "null"] }
+          }
+        }
+      }
+    }
+  },
+  "permissions": { "grants": [] }
+}

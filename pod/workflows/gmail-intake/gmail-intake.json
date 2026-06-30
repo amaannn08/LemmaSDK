@@ -1,0 +1,17 @@
+{
+  "name": "gmail-intake",
+  "description": "Fires on every new Gmail message (webhook) and runs the deterministic extraction wrapper so webhook ingestion uses the same safe path as the rest of the product.",
+  "start": { "type": "EVENT", "config": {
+    "connector_trigger_id": "gmail:composio:gmail_new_gmail_message",
+    "connector_id": "gmail"
+  } },
+  "nodes": [
+    { "id": "sweep", "type": "FUNCTION", "label": "Sweep connectors",
+      "config": { "function_name": "run_extraction", "input_mapping": {} } },
+    { "id": "end", "type": "END", "label": "Done" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "sweep", "target": "end" }
+  ],
+  "visibility": "POD"
+}

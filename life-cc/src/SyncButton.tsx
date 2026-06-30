@@ -1,29 +1,60 @@
-import { useState } from 'react'
-import { useAgentTask } from 'lemma-sdk/react'
-import { Loader2, RefreshCw, X } from 'lucide-react'
-import { lemmaClient } from './lemma-client'
-import { Markdown } from './markdown'
+import { useMutation } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
+import { AlertCircle, Check, Loader2, RefreshCw, X } from 'lucide-react'
+import { runExtraction, type RunExtractionResult } from './pod-functions'
+import { useSyncProgress } from './useSyncProgress'
+import { SOURCE_APP_LABEL } from './types'
 
-const SYNC_PROMPT =
-  "Do one pass now: check all connected services (Gmail, Calendar, Drive, Docs, Sheets) for anything " +
-  'new or changed since your last pass, dedup against existing commitments first, classify category for ' +
-  'every row, write rows for anything real, and report a short summary of what you found.'
+const TIMEOUT_MS = 90_000
 
-// Triggers extraction-agent on demand instead of waiting for the 30-minute
-// schedule. New/updated rows land via the same live websocket subscription
-// every view already uses — this button doesn't refetch anything itself.
 export function SyncButton() {
   const [showResult, setShowResult] = useState(false)
-  const { run, isRunning, outputText, error } = useAgentTask({
-    client: lemmaClient,
-    agentName: 'extraction-agent',
-    parseOutput: false,
-    onError: () => setShowResult(true),
-  })
+  const [runId, setRunId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [runSettled, setRunSettled] = useState(false)
+  const [result, setResult] = useState<RunExtractionResult | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  function sync() {
+  const progress = useSyncProgress(runId)
+  const syncMutation = useMutation({
+    mutationFn: (nextRunId: string) => runExtraction({ sync_run_id: nextRunId }),
+    onSuccess: (output) => {
+      setResult(output)
+      setRunSettled(true)
+    },
+    onError: (nextError) => {
+      setError(nextError instanceof Error ? nextError.message : 'Sync failed to start.')
+      setRunSettled(true)
+    },
+  })
+  const hasActiveProgress = progress.some((row) => row.status === 'pending' || row.status === 'running')
+  const hasFailedProgress = progress.some((row) => row.status === 'failed')
+  const isRunning = Boolean(runId) && (!runSettled || hasActiveProgress) && !error
+  const totalWritten = progress.reduce((n, row) => n + (row.items_written ?? 0), 0) || (result?.items_written ?? 0)
+  const totalSeen = progress.reduce((n, row) => n + (row.items_seen ?? 0), 0) || (result?.items_seen ?? 0)
+  const isFinished = Boolean(runId) && runSettled && !hasActiveProgress && !error
+  const outcome = error ? 'error' : hasFailedProgress ? 'failed' : isFinished ? 'complete' : 'running'
+
+  useEffect(() => {
+    if ((runSettled || error) && timeoutRef.current && !hasActiveProgress) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+  }, [error, hasActiveProgress, runSettled])
+
+  async function sync() {
+    const id = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)
+    setError(null)
+    setRunId(id)
+    setRunSettled(false)
+    setResult(null)
     setShowResult(true)
-    void run(SYNC_PROMPT).then(() => setShowResult(true))
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(
+      () => setError('This is taking longer than expected — the sweep may still finish in the background. Try again in a moment.'),
+      TIMEOUT_MS,
+    )
+    syncMutation.mutate(id)
   }
 
   return (
@@ -48,21 +79,62 @@ export function SyncButton() {
           >
             <X size={14} />
           </button>
-          {isRunning ? (
-            <div className="flex items-center gap-2 text-zinc-400">
-              <Loader2 size={14} className="animate-spin" />
-              Scanning Gmail, Calendar, Drive, Docs, Sheets… this can take up to a minute.
-            </div>
-          ) : error ? (
-            <p className="text-red-400">
-              {/connect|timeout|timed out/i.test(error.message)
-                ? 'The model request timed out — likely a brief network hiccup, not a bug. Click "Check now" to retry.'
-                : error.message}
-            </p>
+
+          {error ? (
+            <p className="text-red-400">{error}</p>
           ) : (
-            <div className="text-zinc-300">
-              <Markdown text={outputText} />
-            </div>
+            <>
+              {outcome === 'complete' ? (
+                <p className="mb-2 font-medium text-zinc-200">
+                  {totalWritten > 0 ? `${totalWritten} new item${totalWritten > 1 ? 's' : ''} found` : 'All caught up'}
+                </p>
+              ) : outcome === 'failed' ? (
+                <p className="mb-2 flex items-center gap-2 font-medium text-amber-400">
+                  <AlertCircle size={14} />
+                  Extraction finished with at least one connector failure.
+                </p>
+              ) : null}
+              {progress.length > 0 ? (
+                <ul className="flex flex-col gap-1.5 text-zinc-400">
+                  {progress.map((row) => (
+                    <li key={row.id} className="flex items-center gap-2">
+                      {row.status === 'done' ? (
+                        <Check size={14} className="shrink-0 text-emerald-500" />
+                      ) : row.status === 'failed' ? (
+                        <AlertCircle size={14} className="shrink-0 text-red-400" />
+                      ) : row.status === 'skipped' ? (
+                        <span className="w-3.5 shrink-0 text-center text-zinc-600">–</span>
+                      ) : (
+                        <Loader2 size={14} className="shrink-0 animate-spin" />
+                      )}
+                      <span>
+                        {SOURCE_APP_LABEL[row.source_app]}
+                        {row.status === 'done'
+                          ? row.category_summary
+                            ? `: ${row.category_summary}`
+                            : `: ${row.items_written} written`
+                          : row.status === 'failed'
+                            ? row.error_message
+                              ? `: ${row.error_message}`
+                              : ': failed'
+                          : row.status === 'skipped'
+                            ? ': not connected'
+                            : '…'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : outcome === 'complete' ? (
+                <p className="text-zinc-400">
+                  Sweep finished{totalSeen > 0 ? ` after checking ${totalSeen} item${totalSeen === 1 ? '' : 's'}` : ''}.
+                </p>
+              ) : (
+                <div className="flex items-center gap-2 text-zinc-400">
+                  <Loader2 size={14} className="animate-spin" />
+                  Starting the extraction run… this can take up to a minute.
+                </div>
+              )}
+            </>
           )}
         </div>
       ) : null}

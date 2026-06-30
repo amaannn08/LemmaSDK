@@ -8,9 +8,10 @@ import {
   Plug,
   Repeat,
   Sparkles,
+  TimerReset,
   Triangle,
 } from 'lucide-react'
-import { useCommitments } from './CommitmentsContext'
+import { useAllCommitments, useCommitments } from './CommitmentsContext'
 import { SyncButton } from './SyncButton'
 import { CATEGORY_NAV } from './types'
 
@@ -23,13 +24,14 @@ const ICONS = {
 }
 
 const PAGE_TITLE: Record<string, string> = {
-  '/': 'Connections',
+  '/connections': 'Connections',
   '/dashboard': 'Dashboard',
   '/loops': 'Open Loops',
   '/deadlines': 'Deadlines',
   '/recurring': 'Recurring',
   '/documents': 'Documents',
   '/followups': 'Follow-ups',
+  '/snoozed': 'Snoozed',
   '/ai': 'AI Briefing',
 }
 
@@ -40,6 +42,8 @@ const navItemClass = ({ isActive }: { isActive: boolean }) =>
 
 export function Layout() {
   const { records } = useCommitments()
+  const { records: snoozedRecords } = useCommitments({ status: 'snoozed' })
+  const { isOpenPartial, openLimit } = useAllCommitments()
   const counts = Object.fromEntries(
     CATEGORY_NAV.map(({ category }) => [category, records.filter((r) => r.category === category).length]),
   )
@@ -62,7 +66,7 @@ export function Layout() {
         <nav className="flex-1 overflow-y-auto px-2 py-3">
           <div className="mb-4">
             <div className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-zinc-600">Overview</div>
-            <NavLink to="/" className={navItemClass} end>
+            <NavLink to="/connections" className={navItemClass}>
               <Plug size={16} />
               Connections
             </NavLink>
@@ -74,6 +78,9 @@ export function Layout() {
 
           <div className="mb-4">
             <div className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-zinc-600">Life Ops</div>
+            {isOpenPartial ? (
+              <p className="px-2 pb-2 text-[11px] text-amber-500">Showing first {openLimit} open items.</p>
+            ) : null}
             {CATEGORY_NAV.map(({ category, label, path }) => {
               const Icon = ICONS[category]
               return (
@@ -82,12 +89,21 @@ export function Layout() {
                   <span className="flex-1">{label}</span>
                   {counts[category] > 0 ? (
                     <span className="min-w-5 rounded-full bg-zinc-800 px-1.5 text-center text-xs font-semibold text-zinc-400">
-                      {counts[category]}
+                      {isOpenPartial ? `${counts[category]}+` : counts[category]}
                     </span>
                   ) : null}
                 </NavLink>
               )
             })}
+            <NavLink to="/snoozed" className={navItemClass}>
+              <TimerReset size={16} />
+              <span className="flex-1">Snoozed</span>
+              {snoozedRecords.length > 0 ? (
+                <span className="min-w-5 rounded-full bg-zinc-800 px-1.5 text-center text-xs font-semibold text-zinc-400">
+                  {snoozedRecords.length}
+                </span>
+              ) : null}
+            </NavLink>
           </div>
 
           <div>

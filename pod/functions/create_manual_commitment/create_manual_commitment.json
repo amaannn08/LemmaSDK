@@ -1,0 +1,10 @@
+{
+  "name": "create_manual_commitment",
+  "description": "Creates a manual commitment through a typed backend contract so quick-add and agents share the same validation path.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] }
+  ] }
+}

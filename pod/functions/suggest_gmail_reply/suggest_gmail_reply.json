@@ -1,0 +1,11 @@
+{
+  "name": "suggest_gmail_reply",
+  "description": "Fetches Gmail context, reduces it to a bounded prompt payload, and returns sanitized fields for the read-only reply suggestion agent.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] },
+    { "resource_type": "connector", "resource_name": "gmail", "permission_ids": ["connector.use"] }
+  ] }
+}

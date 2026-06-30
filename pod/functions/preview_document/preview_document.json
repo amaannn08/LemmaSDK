@@ -1,0 +1,13 @@
+{
+  "name": "preview_document",
+  "description": "Read-only document preview for Drive, Docs, and Sheets commitments. Fetches connector content directly and formats it deterministically.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] },
+    { "resource_type": "connector", "resource_name": "google_drive", "permission_ids": ["connector.use"] },
+    { "resource_type": "connector", "resource_name": "google_docs", "permission_ids": ["connector.use"] },
+    { "resource_type": "connector", "resource_name": "google_sheets", "permission_ids": ["connector.use"] }
+  ] }
+}

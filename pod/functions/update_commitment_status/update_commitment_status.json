@@ -1,0 +1,10 @@
+{
+  "name": "update_commitment_status",
+  "description": "Canonical status transition function for done, snoozed, and restored commitments.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] }
+  ] }
+}

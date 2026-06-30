@@ -1,0 +1,32 @@
+{
+  "name": "briefing-refresh",
+  "description": "Watermark-gated briefing regeneration. A deterministic gather step decides whether anything changed, a decision node skips the agent when nothing changed, and write_briefing persists the daily row.",
+  "start": { "type": "MANUAL" },
+  "nodes": [
+    { "id": "gather", "type": "FUNCTION", "label": "Gather commitment data",
+      "config": { "function_name": "gather_briefing_data", "input_mapping": {} } },
+    { "id": "should-brief", "type": "DECISION", "label": "Should regenerate briefing?",
+      "config": { "rules": [
+        { "condition": "gather.should_regenerate == `true`", "next_node_id": "brief" }
+      ] } },
+    { "id": "brief", "type": "AGENT", "label": "Compose briefing",
+      "config": { "agent_name": "briefing-agent",
+        "input_mapping": {
+          "input": { "type": "expression", "value": "gather.prompt" } } } },
+    { "id": "persist", "type": "FUNCTION", "label": "Persist briefing",
+      "config": { "function_name": "write_briefing",
+        "input_mapping": {
+          "regenerate": { "type": "expression", "value": "brief.regenerate" },
+          "content": { "type": "expression", "value": "brief.content" },
+          "briefing_date": { "type": "expression", "value": "gather.briefing_date" } } } },
+    { "id": "end", "type": "END", "label": "Done" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "gather", "target": "should-brief" },
+    { "id": "e2", "source": "should-brief", "target": "brief" },
+    { "id": "e3", "source": "brief", "target": "persist" },
+    { "id": "e4", "source": "persist", "target": "end" },
+    { "id": "e5", "source": "should-brief", "target": "end" }
+  ],
+  "visibility": "POD"
+}

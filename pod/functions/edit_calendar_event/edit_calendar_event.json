@@ -1,0 +1,11 @@
+{
+  "name": "edit_calendar_event",
+  "description": "Fetches the source calendar event, patches only the requested fields, and keeps attendee notifications disabled by default.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] },
+    { "resource_type": "connector", "resource_name": "google_calendar", "permission_ids": ["connector.use"] }
+  ] }
+}

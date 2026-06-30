@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useCreateRecord } from 'lemma-sdk/react'
-import { CalendarClock, CircleDashed, FileText, Loader2, MessageCircleMore, Repeat, Zap } from 'lucide-react'
-import { lemmaClient } from './lemma-client'
-import { useCommitments } from './CommitmentsContext'
+import { useMutation } from '@tanstack/react-query'
+import { CalendarClock, CircleDashed, Loader2, MessageCircleMore, Repeat, Zap } from 'lucide-react'
+import { useAllCommitments, useCommitments } from './CommitmentsContext'
 import { CommitmentItem } from './CommitmentItem'
 import { AiBriefing } from './AiBriefing'
 import { KpiCard, type KpiTone } from './components/KpiCard'
+import { createManualCommitment } from './pod-functions'
 import { CATEGORY_NAV, type Category } from './types'
 
 const KPI_META: Record<Exclude<Category, 'document'>, { icon: typeof CircleDashed; tone: KpiTone; sublabel: string }> = {
@@ -25,51 +25,59 @@ function todayISO() {
 function QuickAdd() {
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<Category>('loop')
-  const { create, isSubmitting } = useCreateRecord({ client: lemmaClient, tableName: 'commitments' })
+  const createMutation = useMutation({
+    mutationFn: () =>
+      createManualCommitment({
+        title: title.trim(),
+        category,
+        priority: 'normal',
+      }),
+    onSuccess: () => setTitle(''),
+  })
 
   function submit() {
     const trimmed = title.trim()
     if (!trimmed) return
-    void create({
-      title: trimmed,
-      category,
-      source_app: 'manual',
-      status: category === 'deadline' ? 'open' : 'open',
-      priority: 'normal',
-      detected_at: new Date().toISOString(),
-    }).then(() => setTitle(''))
+    createMutation.mutate()
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-      <Zap size={16} className="shrink-0 text-teal-500" />
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && submit()}
-        placeholder='Try: "Renew passport" or "Follow up with Rahul about the repo"'
-        className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-teal-600"
-      />
-      <select
-        value={category}
-        onChange={(e) => setCategory(e.target.value as Category)}
-        className="rounded-lg border border-zinc-700 bg-zinc-800 px-2 py-2 text-xs text-zinc-300 outline-none"
-      >
-        {CATEGORY_NAV.map(({ category: c, label }) => (
-          <option key={c} value={c}>
-            {label}
-          </option>
-        ))}
-      </select>
-      <button
-        type="button"
-        onClick={submit}
-        disabled={isSubmitting || !title.trim()}
-        className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-      >
-        {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : null}
-        Add
-      </button>
+    <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+      <div className="flex items-center gap-3">
+        <Zap size={16} className="shrink-0 text-teal-500" />
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          placeholder='Try: "Renew passport" or "Follow up with Rahul about the repo"'
+          className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-teal-600"
+        />
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value as Category)}
+          className="rounded-lg border border-zinc-700 bg-zinc-800 px-2 py-2 text-xs text-zinc-300 outline-none"
+        >
+          {CATEGORY_NAV.map(({ category: c, label }) => (
+            <option key={c} value={c}>
+              {label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={createMutation.isPending || !title.trim()}
+          className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        >
+          {createMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : null}
+          Add
+        </button>
+      </div>
+      {createMutation.error ? (
+        <p className="text-xs text-red-400">
+          {createMutation.error instanceof Error ? createMutation.error.message : String(createMutation.error)}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -96,6 +104,7 @@ function CategoryPreview({ category, label, path }: { category: Category; label:
 }
 
 export function Dashboard() {
+  const { isOpenPartial, openLimit } = useAllCommitments()
   const { records: openLoops } = useCommitments({ category: 'loop' })
   const { records: deadlines } = useCommitments({ category: 'deadline' })
   const { records: recurring } = useCommitments({ category: 'recurring' })
@@ -112,10 +121,10 @@ export function Dashboard() {
     document: 0,
   }
   const badges: Record<Category, string> = {
-    loop: overdueLoops > 0 ? `${overdueLoops} overdue` : 'On track',
-    deadline: dueToday > 0 ? `${dueToday} today` : 'Upcoming',
-    recurring: 'Active',
-    followup: followups.length > 0 ? 'Waiting' : 'Clear',
+    loop: overdueLoops > 0 ? `${overdueLoops} overdue${isOpenPartial ? ' · partial' : ''}` : isOpenPartial ? 'On track · partial' : 'On track',
+    deadline: dueToday > 0 ? `${dueToday} today${isOpenPartial ? ' · partial' : ''}` : isOpenPartial ? 'Upcoming · partial' : 'Upcoming',
+    recurring: isOpenPartial ? 'Active · partial' : 'Active',
+    followup: followups.length > 0 ? `Waiting${isOpenPartial ? ' · partial' : ''}` : isOpenPartial ? 'Clear · partial' : 'Clear',
     document: '',
   }
 
@@ -141,6 +150,15 @@ export function Dashboard() {
       </div>
 
       <AiBriefing />
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-sm text-zinc-400">
+        The main queue shows open commitments. Snoozed items live in their own view so they stay visible without mixing into active work.
+      </div>
+      {isOpenPartial ? (
+        <div className="rounded-xl border border-amber-900 bg-amber-950/30 px-4 py-3 text-sm text-amber-300">
+          Showing first {openLimit} open items. Sidebar badges and dashboard counts are partial until the cap is raised or the queue shrinks.
+        </div>
+      ) : null}
 
       <QuickAdd />
 

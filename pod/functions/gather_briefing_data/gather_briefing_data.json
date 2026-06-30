@@ -1,0 +1,12 @@
+{
+  "name": "gather_briefing_data",
+  "description": "Watermark check + single-query commitment fetch. Returns pre-packaged data for briefing-agent so it needs zero tool calls.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "briefing",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] },
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read"] }
+  ] }
+}

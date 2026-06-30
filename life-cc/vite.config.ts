@@ -52,18 +52,26 @@ export default defineConfig(({ mode }) => {
   // LEMMA_DEV_PROXY_TARGET is set, the SDK talks to a same-origin '/api' path and
   // Vite forwards it to the backend, so there is no cross-origin CORS in dev.
   const proxyTarget = env.LEMMA_DEV_PROXY_TARGET
-  const server = proxyTarget
-    ? {
-        proxy: {
-          '/api': {
-            target: proxyTarget,
-            changeOrigin: true,
-            secure: false,
-            rewrite: (path: string) => path.replace(/^\/api/, ''),
+  const server = {
+    // Auth/cookies are scoped to 127-0-0-1.sslip.io (see README — it's the
+    // workaround for Google OAuth rejecting bare 127.0.0.1 redirect URIs),
+    // so the app has to be reachable on that same host too, not just
+    // 127.0.0.1 — otherwise sign-in completes on a different origin and
+    // bounces back to the platform instead of this app.
+    allowedHosts: ['127-0-0-1.sslip.io'],
+    ...(proxyTarget
+      ? {
+          proxy: {
+            '/api': {
+              target: proxyTarget,
+              changeOrigin: true,
+              secure: false,
+              rewrite: (path: string) => path.replace(/^\/api/, ''),
+            },
           },
-        },
-      }
-    : undefined
+        }
+      : undefined),
+  }
 
   return {
     base: mode === 'production' ? env.VITE_LEMMA_APP_BASE_PATH || '/' : '/',

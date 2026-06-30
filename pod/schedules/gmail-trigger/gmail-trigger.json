@@ -1,0 +1,9 @@
+{
+  "name": "gmail-trigger",
+  "schedule_type": "WEBHOOK",
+  "config": { "source": "gmail" },
+  "account_id": "019f05a4-e3bc-75e3-9bfa-853251e93f99",
+  "workflow_name": "gmail-intake",
+  "is_active": true,
+  "visibility": "POD"
+}

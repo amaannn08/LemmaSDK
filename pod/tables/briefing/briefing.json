@@ -1,0 +1,15 @@
+{
+  "name": "briefing",
+  "primary_key_column": "id",
+  "enable_rls": true,
+  "visibility": "POD",
+  "columns": [
+    { "name": "briefing_date", "type": "DATE", "required": true, "unique": true,
+      "description": "The date this briefing covers (one current row per user/day)." },
+    { "name": "content", "type": "TEXT", "required": true,
+      "description": "The generated briefing prose, rendered live in the app." },
+    { "name": "generated_at", "type": "DATETIME", "required": true,
+      "description": "When this briefing was generated — also the watermark the */5 refresh compares commitments against, so it only regenerates when something changed since." }
+  ],
+  "config": {}
+}

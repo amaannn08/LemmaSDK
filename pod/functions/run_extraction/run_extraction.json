@@ -1,0 +1,16 @@
+{
+  "name": "run_extraction",
+  "description": "Safe wrapper for commitment ingestion. Initializes sync progress rows for each configured source when a sync_run_id is provided, then runs the deterministic extraction sweep.",
+  "type": "JOB",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] },
+    { "resource_type": "datastore_table", "resource_name": "sync_progress",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] },
+    { "resource_type": "connector", "resource_name": "gmail", "permission_ids": ["connector.use"] },
+    { "resource_type": "connector", "resource_name": "google_calendar", "permission_ids": ["connector.use"] },
+    { "resource_type": "connector", "resource_name": "google_drive", "permission_ids": ["connector.use"] },
+    { "resource_type": "agent", "resource_name": "email-classifier", "permission_ids": ["agent.execute", "agent.read"] }
+  ] }
+}

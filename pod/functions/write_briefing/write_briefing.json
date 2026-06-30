@@ -1,0 +1,10 @@
+{
+  "name": "write_briefing",
+  "description": "Upserts today's row in the briefing table (one row per day). Deterministic write — agents can't write reliably on this runtime, so briefing-agent judges + composes and this function persists.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "briefing",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] }
+  ] }
+}

@@ -136,16 +136,7 @@ export function ConnectionsScreen() {
                     <span className="text-xs font-medium text-zinc-500">Coming soon</span>
                   ) : null}
 
-                  {connector.comingSoon ? (
-                    <button
-                      type="button"
-                      disabled
-                      title="Not set up yet"
-                      className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-500"
-                    >
-                      Connect
-                    </button>
-                  ) : isConnected ? (
+                  {isConnected ? (
                     <button
                       type="button"
                       disabled={isBusy}
@@ -153,6 +144,15 @@ export function ConnectionsScreen() {
                       className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 disabled:opacity-60"
                     >
                       {isBusy ? <Loader2 size={14} className="animate-spin" /> : 'Disconnect'}
+                    </button>
+                  ) : connector.comingSoon ? (
+                    <button
+                      type="button"
+                      disabled
+                      title="Not set up yet"
+                      className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-500"
+                    >
+                      Connect
                     </button>
                   ) : (
                     <button

@@ -1,0 +1,14 @@
+{
+  "name": "extraction-run",
+  "description": "Runs the deterministic extraction wrapper so scheduled, webhook, and manual flows share the same backend source policy.",
+  "start": { "type": "SCHEDULED", "config": { "schedule_type": "CRON" } },
+  "nodes": [
+    { "id": "sweep", "type": "FUNCTION", "label": "Sweep connectors",
+      "config": { "function_name": "run_extraction", "input_mapping": {} } },
+    { "id": "end", "type": "END", "label": "Done" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "sweep", "target": "end" }
+  ],
+  "visibility": "POD"
+}
