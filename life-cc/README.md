@@ -153,21 +153,31 @@ page reload, not a popup) and catches a token revoked since the last visit.
 `organizationId` is fetched once via `lemmaClient.pods.get(podId).organization_id`
 — not hardcoded — since the app only knows its `podId` from `.env.local`.
 
+Canonical deploy target:
+
+```bash
+lemma apps deploy life-cc . --yes
+```
+
 ## The brain — `pod/` bundle
 
-A separate bundle dir, `/home/amann/lemma/pod/`, holds the extraction agent.
-Import with `lemma --server local pods import ./pod`.
+A separate bundle dir, `/home/amann/lemma/pod/`, holds the hardened
+function-backed pod bundle. Import with:
+
+```bash
+lemma pods import ./pod --dry-run
+lemma pods import ./pod
+```
 
 - **Table** `commitments` (RLS-on) — one row per real deadline/follow-up/
   document the agent finds. Columns: `title`, `description`, `source_app`
   (enum, the 5 Google connector ids), `source_ref`, `due_date`, `status`
   (`open`/`done`/`snoozed`), `priority` (`low`/`normal`/`high`), `detected_at`.
-- **Agent** `extraction-agent` — grants: `commitments` read/write +
-  `connector.use` on the 5 Google connectors.
-- **Schedule** `extraction-sweep` — TIME cron, every 30 minutes, runs the
-  agent. (Not WEBHOOK: native LEMMA connectors expose zero triggers in this
-  installed release — `lemma connectors triggers list <auth-config>` returns
-  empty for all 5.)
+- **Function** `run_extraction` — deterministic ingestion wrapper used by the
+  app's `Check now` button and by the extraction workflows.
+- **Workflow** `extraction-run` — wraps `run_extraction` for scheduled or
+  triggered execution.
+- **Schedule** `extraction-sweep` — TIME cron that targets the workflow.
 
 **LLM key** (DeepSeek, OpenAI-compatible):
 ```bash
@@ -199,10 +209,10 @@ agent back to `POD` only).
 ## Dashboard
 
 `src/Dashboard.tsx` shows open `commitments` rows live via `lemma-sdk/react`'s
-`useLiveRecords` (websocket merge, no polling) and lets you mark a row
-done/snoozed via a per-row `useUpdateRecord`. Needs the `pod/` bundle imported
-and at least one connector connected with real mail/events/files to show
-anything (currently: Gmail only).
+`useLiveRecords` (websocket merge, no polling), keeps day selection in the
+existing `?day=` query param, and exposes one canonical action cluster on the
+page header: `Check now` plus previous/next day controls. The app uses typed
+function paths for mutating actions and `sync_progress` for manual sync status.
 
 ## Still out of scope (future work)
 

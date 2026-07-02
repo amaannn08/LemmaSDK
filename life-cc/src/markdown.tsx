@@ -8,7 +8,7 @@ import type { ReactNode } from 'react'
 function renderInline(text: string): ReactNode[] {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
     part.startsWith('**') && part.endsWith('**') ? (
-      <strong key={i} className="font-semibold text-zinc-100">
+      <strong key={i} className="font-semibold text-[#2c261f]">
         {part.slice(2, -2)}
       </strong>
     ) : (
@@ -25,13 +25,13 @@ export function Markdown({ text }: { text: string }) {
     .filter((block) => !/^[\s*_-]+$/.test(block.trim()))
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 text-[#423a32]">
       {blocks.map((block, i) => {
         const lines = block.split('\n').filter(Boolean)
         const headerMatch = lines.length === 1 ? /^(#{1,6})\s+(.*)/.exec(lines[0].trim()) : null
         if (headerMatch) {
           return (
-            <p key={i} className="font-semibold text-zinc-100">
+            <p key={i} className="font-semibold text-[#2c261f]">
               {renderInline(headerMatch[2])}
             </p>
           )

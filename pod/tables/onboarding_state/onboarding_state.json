@@ -1,0 +1,16 @@
+{
+  "name": "onboarding_state",
+  "primary_key_column": "id",
+  "enable_rls": true,
+  "visibility": "POD",
+  "columns": [
+    { "name": "status", "type": "ENUM", "required": true, "default": "pending",
+      "options": ["pending", "completed", "skipped"],
+      "description": "pending until the user explicitly finishes setup or skips it." },
+    { "name": "selected_connector_slugs", "type": "TEXT", "max_length": 512,
+      "description": "JSON array of connector slugs the user connected before finishing setup." },
+    { "name": "completed_at", "type": "DATETIME" },
+    { "name": "skipped_at", "type": "DATETIME" }
+  ],
+  "config": {}
+}

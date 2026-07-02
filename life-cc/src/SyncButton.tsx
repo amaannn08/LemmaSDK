@@ -63,47 +63,47 @@ export function SyncButton() {
         type="button"
         onClick={sync}
         disabled={isRunning}
-        className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800 disabled:opacity-60"
+        className="life-action-primary inline-flex items-center gap-2 disabled:opacity-60"
       >
         {isRunning ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
         {isRunning ? 'Checking…' : 'Check now'}
       </button>
 
       {showResult ? (
-        <div className="absolute right-0 top-full z-10 mt-2 max-h-96 w-80 overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-900 p-4 text-sm shadow-xl">
+        <div className="life-card absolute right-0 top-full z-10 mt-2 max-h-96 w-80 overflow-y-auto text-sm">
           <button
             type="button"
             onClick={() => setShowResult(false)}
-            className="absolute right-2 top-2 text-zinc-500 hover:text-zinc-300"
+            className="absolute right-3 top-3 text-[#a09688] hover:text-[#2c261f]"
             aria-label="Dismiss"
           >
             <X size={14} />
           </button>
 
           {error ? (
-            <p className="text-red-400">{error}</p>
+            <p className="text-[#e05c5c]">{error}</p>
           ) : (
             <>
               {outcome === 'complete' ? (
-                <p className="mb-2 font-medium text-zinc-200">
+                <p className="mb-2 font-medium text-[#2c261f]">
                   {totalWritten > 0 ? `${totalWritten} new item${totalWritten > 1 ? 's' : ''} found` : 'All caught up'}
                 </p>
               ) : outcome === 'failed' ? (
-                <p className="mb-2 flex items-center gap-2 font-medium text-amber-400">
+                <p className="mb-2 flex items-center gap-2 font-medium text-[#f5a623]">
                   <AlertCircle size={14} />
                   Extraction finished with at least one connector failure.
                 </p>
               ) : null}
               {progress.length > 0 ? (
-                <ul className="flex flex-col gap-1.5 text-zinc-400">
+                <ul className="flex flex-col gap-1.5 text-[#8d8274]">
                   {progress.map((row) => (
                     <li key={row.id} className="flex items-center gap-2">
                       {row.status === 'done' ? (
-                        <Check size={14} className="shrink-0 text-emerald-500" />
+                        <Check size={14} className="shrink-0 text-[#4caf50]" />
                       ) : row.status === 'failed' ? (
-                        <AlertCircle size={14} className="shrink-0 text-red-400" />
+                        <AlertCircle size={14} className="shrink-0 text-[#e05c5c]" />
                       ) : row.status === 'skipped' ? (
-                        <span className="w-3.5 shrink-0 text-center text-zinc-600">–</span>
+                        <span className="w-3.5 shrink-0 text-center text-[#c7bdae]">–</span>
                       ) : (
                         <Loader2 size={14} className="shrink-0 animate-spin" />
                       )}
@@ -125,11 +125,11 @@ export function SyncButton() {
                   ))}
                 </ul>
               ) : outcome === 'complete' ? (
-                <p className="text-zinc-400">
+                <p className="text-[#8d8274]">
                   Sweep finished{totalSeen > 0 ? ` after checking ${totalSeen} item${totalSeen === 1 ? '' : 's'}` : ''}.
                 </p>
               ) : (
-                <div className="flex items-center gap-2 text-zinc-400">
+                <div className="flex items-center gap-2 text-[#8d8274]">
                   <Loader2 size={14} className="animate-spin" />
                   Starting the extraction run… this can take up to a minute.
                 </div>

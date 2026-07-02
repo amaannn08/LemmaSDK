@@ -5,10 +5,12 @@ import type { Category, Commitment, CommitmentViewStatus } from './types'
 
 const OPEN_COMMITMENT_LIMIT = 500
 const SNOOZED_COMMITMENT_LIMIT = 200
+const UNCLASSIFIED_COMMITMENT_LIMIT = 200
 
 type CommitmentsContextValue = {
   openRecords: Commitment[]
   snoozedRecords: Commitment[]
+  unclassifiedRecords: Commitment[]
   isOpenPartial: boolean
   openLimit: number
   isLoading: boolean
@@ -16,6 +18,17 @@ type CommitmentsContextValue = {
 }
 
 const CommitmentsContext = createContext<CommitmentsContextValue | null>(null)
+
+function dedupeById(records: Commitment[]) {
+  const seen = new Set<string>()
+  const deduped: Commitment[] = []
+  for (const record of records) {
+    if (seen.has(record.id)) continue
+    seen.add(record.id)
+    deduped.push(record)
+  }
+  return deduped
+}
 
 export function CommitmentsProvider({ children }: { children: ReactNode }) {
   const openState = useLiveRecords<Commitment>({
@@ -34,15 +47,24 @@ export function CommitmentsProvider({ children }: { children: ReactNode }) {
     limit: SNOOZED_COMMITMENT_LIMIT,
     reconcile: 'refetch',
   })
-  const openRecords = openState.records
-  const snoozedRecords = snoozedState.records
+  const unclassifiedState = useLiveRecords<Commitment>({
+    client: lemmaClient,
+    tableName: 'commitments',
+    filters: [{ field: 'classify_status', op: 'eq', value: 'unclassified' }],
+    sort: [{ field: 'detected_at', direction: 'desc' }],
+    limit: UNCLASSIFIED_COMMITMENT_LIMIT,
+    reconcile: 'refetch',
+  })
+  const openRecords = dedupeById(openState.records)
+  const snoozedRecords = dedupeById(snoozedState.records)
+  const unclassifiedRecords = dedupeById(unclassifiedState.records)
   const isLoading = openState.isLoading || snoozedState.isLoading
   const error = openState.error ?? snoozedState.error
   const isOpenPartial = openRecords.length >= OPEN_COMMITMENT_LIMIT
 
   return (
     <CommitmentsContext.Provider
-      value={{ openRecords, snoozedRecords, isOpenPartial, openLimit: OPEN_COMMITMENT_LIMIT, isLoading, error }}
+      value={{ openRecords, snoozedRecords, unclassifiedRecords, isOpenPartial, openLimit: OPEN_COMMITMENT_LIMIT, isLoading, error }}
     >
       {children}
     </CommitmentsContext.Provider>
@@ -63,7 +85,7 @@ export function useCommitments({
   status?: CommitmentViewStatus
 } = {}) {
   const { openRecords, snoozedRecords, isLoading, error } = useAllCommitments()
-  const allRecords = [...openRecords, ...snoozedRecords]
+  const allRecords = dedupeById([...openRecords, ...snoozedRecords])
   const scopedRecords =
     status === 'all' ? allRecords : status === 'snoozed' ? snoozedRecords : openRecords
 

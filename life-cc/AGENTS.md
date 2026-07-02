@@ -4,7 +4,8 @@ This is a Lemma app app generated from the Vite template.
 
 ## Runtime
 
-- App name: `life-cc`
+- Canonical deployed app: `life-cc`
+- Local source directory: `life-cc`
 - Pod id: `life-command-centre`
 - API URL: `http://127-0-0-1.sslip.io:8711`
 - Auth URL: `http://127-0-0-1.sslip.io:3711/auth`
@@ -31,4 +32,4 @@ This is a Lemma app app generated from the Vite template.
 
 - Run the local dev server with the package manager used by the project.
 - Run `npm run build`, `pnpm run build`, or `yarn run build` before deploy.
-- Deploy with `lemma apps deploy life-cc --source-dir . --yes`.
+- Deploy with `lemma apps deploy life-cc . --yes`.

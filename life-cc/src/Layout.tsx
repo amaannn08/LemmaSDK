@@ -1,8 +1,10 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   CalendarClock,
   CircleDashed,
   FileText,
+  Inbox,
   LayoutDashboard,
   MessageCircleMore,
   Plug,
@@ -10,10 +12,14 @@ import {
   Sparkles,
   TimerReset,
   Triangle,
+  ChevronDown,
 } from 'lucide-react'
+import { useCurrentUser } from 'lemma-sdk/react'
 import { useAllCommitments, useCommitments } from './CommitmentsContext'
+import { lemmaClient } from './lemma-client'
 import { SyncButton } from './SyncButton'
 import { CATEGORY_NAV } from './types'
+import { getUserDisplayName, getUserInitial, getUserSecondaryLabel } from './user-profile'
 
 const ICONS = {
   loop: CircleDashed,
@@ -23,105 +29,140 @@ const ICONS = {
   followup: MessageCircleMore,
 }
 
-const PAGE_TITLE: Record<string, string> = {
-  '/connections': 'Connections',
-  '/dashboard': 'Dashboard',
-  '/loops': 'Open Loops',
-  '/deadlines': 'Deadlines',
-  '/recurring': 'Recurring',
-  '/documents': 'Documents',
-  '/followups': 'Follow-ups',
-  '/snoozed': 'Snoozed',
-  '/ai': 'AI Briefing',
-}
-
 const navItemClass = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-    isActive ? 'bg-teal-950 text-teal-400' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
-  }`
+  `life-nav-link ${isActive ? 'life-nav-link--active' : ''}`
 
 export function Layout() {
   const { records } = useCommitments()
   const { records: snoozedRecords } = useCommitments({ status: 'snoozed' })
-  const { isOpenPartial, openLimit } = useAllCommitments()
+  const { isOpenPartial, openLimit, unclassifiedRecords } = useAllCommitments()
+  const { user } = useCurrentUser({ client: lemmaClient })
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const location = useLocation()
   const counts = Object.fromEntries(
     CATEGORY_NAV.map(({ category }) => [category, records.filter((r) => r.category === category).length]),
   )
-  const location = useLocation()
-  const title = PAGE_TITLE[location.pathname] ?? 'Life Command Centre'
+  const withSearch = (path: string) => ({ pathname: path, search: location.search })
+
+  const isDashboard = location.pathname === '/dashboard' || location.pathname === '/'
+
+  const displayName = getUserDisplayName(user)
+  const userInitial = getUserInitial(user)
+  const userSubtitle = getUserSecondaryLabel(user)
+
+  async function handleLogout() {
+    if (isLoggingOut) return
+    setIsLoggingOut(true)
+    try {
+      await lemmaClient.auth.redirectToFederatedLogout({ redirectUri: window.location.origin })
+    } catch {
+      await lemmaClient.auth.signOut()
+      window.location.assign('/')
+    }
+  }
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-zinc-100">
-      <aside className="flex w-60 flex-col border-r border-zinc-800 bg-zinc-900">
-        <div className="flex items-center gap-2 border-b border-zinc-800 px-4 py-4">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-teal-600">
+    <div className="life-shell flex flex-col lg:flex-row">
+      <aside className="life-sidebar">
+        <div className="life-sidebar__logo">
+          <div className="life-logo-icon">
             <Triangle size={14} className="fill-white text-white" />
           </div>
-          <div>
-            <div className="text-sm font-bold leading-tight">LifeOps</div>
-            <div className="text-xs text-zinc-500">Command Centre</div>
+          <div className="life-logo-copy">
+            <strong>LifeOps</strong>
+            <span>Command Centre</span>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2 py-3">
+        <nav className="life-nav flex-1 overflow-y-auto py-3">
           <div className="mb-4">
-            <div className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-zinc-600">Overview</div>
-            <NavLink to="/connections" className={navItemClass}>
+            <div className="life-nav-section-title">Overview</div>
+            <NavLink to={withSearch('/connections')} className={navItemClass}>
               <Plug size={16} />
               Connections
             </NavLink>
-            <NavLink to="/dashboard" className={navItemClass}>
+            <NavLink to={withSearch('/dashboard')} className={navItemClass}>
               <LayoutDashboard size={16} />
               Dashboard
             </NavLink>
           </div>
 
           <div className="mb-4">
-            <div className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-zinc-600">Life Ops</div>
-            {isOpenPartial ? (
-              <p className="px-2 pb-2 text-[11px] text-amber-500">Showing first {openLimit} open items.</p>
-            ) : null}
+            <div className="life-nav-section-title">Life Ops</div>
+            {isOpenPartial ? <p className="px-5 pb-2 text-[11px] text-[#b37a24]">Showing first {openLimit} open items.</p> : null}
             {CATEGORY_NAV.map(({ category, label, path }) => {
               const Icon = ICONS[category]
               return (
-                <NavLink key={path} to={path} className={navItemClass}>
+                <NavLink key={path} to={withSearch(path)} className={navItemClass}>
                   <Icon size={16} />
                   <span className="flex-1">{label}</span>
-                  {counts[category] > 0 ? (
-                    <span className="min-w-5 rounded-full bg-zinc-800 px-1.5 text-center text-xs font-semibold text-zinc-400">
-                      {isOpenPartial ? `${counts[category]}+` : counts[category]}
-                    </span>
-                  ) : null}
+                  {counts[category] > 0 ? <span className="life-nav-count">{isOpenPartial ? `${counts[category]}+` : counts[category]}</span> : null}
                 </NavLink>
               )
             })}
-            <NavLink to="/snoozed" className={navItemClass}>
+            <NavLink to={withSearch('/snoozed')} className={navItemClass}>
               <TimerReset size={16} />
               <span className="flex-1">Snoozed</span>
-              {snoozedRecords.length > 0 ? (
-                <span className="min-w-5 rounded-full bg-zinc-800 px-1.5 text-center text-xs font-semibold text-zinc-400">
-                  {snoozedRecords.length}
-                </span>
-              ) : null}
+              {snoozedRecords.length > 0 ? <span className="life-nav-count">{snoozedRecords.length}</span> : null}
+            </NavLink>
+            <NavLink to={withSearch('/unclassified')} className={navItemClass}>
+              <Inbox size={16} />
+              <span className="flex-1">Unclassified</span>
+              {unclassifiedRecords.length > 0 ? <span className="life-nav-count">{unclassifiedRecords.length}</span> : null}
             </NavLink>
           </div>
 
           <div>
-            <div className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-zinc-600">Intelligence</div>
-            <NavLink to="/ai" className={navItemClass}>
+            <div className="life-nav-section-title">Intelligence</div>
+            <NavLink to={withSearch('/ai')} className={navItemClass}>
               <Sparkles size={16} />
               AI Briefing
             </NavLink>
           </div>
         </nav>
+
+        <div className="life-sidebar__footer">
+          <details className="life-account">
+            <summary className="life-user" aria-label="Account menu">
+              <div className="life-avatar" aria-hidden="true">
+                {userInitial}
+              </div>
+              <span className="life-user__copy">
+                <span className="life-user__name">{displayName}</span>
+                <span className="life-user__meta">{userSubtitle}</span>
+              </span>
+              <span className="life-user__chevron" aria-hidden="true">
+                <ChevronDown size={14} />
+              </span>
+            </summary>
+            <div className="life-account__menu">
+              <Link to={withSearch('/connections')} className="life-account__menu-item">
+                Manage connections
+              </Link>
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                disabled={isLoggingOut}
+                className="life-account__menu-item life-account__menu-item--danger disabled:opacity-60"
+              >
+                {isLoggingOut ? 'Logging out…' : 'Logout'}
+              </button>
+            </div>
+          </details>
+        </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center gap-4 border-b border-zinc-800 px-6">
-          <span className="flex-1 text-base font-semibold">{title}</span>
-          <SyncButton />
-        </header>
-        <main className="flex-1 overflow-y-auto p-6">
+      <div className="life-main">
+        {!isDashboard ? (
+          <header className="life-topbar life-topbar--compact">
+            <div className="life-topbar__side" />
+            <div className="life-topbar__side life-topbar__side--right">
+              <SyncButton />
+            </div>
+          </header>
+        ) : null}
+
+        <main className="life-page">
           <Outlet />
         </main>
       </div>

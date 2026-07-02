@@ -1,0 +1,11 @@
+{
+  "name": "create_calendar_event",
+  "description": "Creates a new Google Calendar event on the caller's own connected account and files a matching commitments row.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] },
+    { "resource_type": "connector", "resource_name": "google_calendar", "permission_ids": ["connector.use"] }
+  ] }
+}

@@ -1,13 +1,24 @@
 import { LemmaClient } from 'lemma-sdk'
 
-// Shared Lemma client for this app. Runtime config comes from .env.local
-// (VITE_LEMMA_API_URL / VITE_LEMMA_AUTH_URL / VITE_LEMMA_POD_ID), which
-// `lemma apps init` writes for you. import.meta.env is typed via
-// "vite/client" in tsconfig.json.
+type LemmaRuntimeConfig = {
+  apiUrl?: string
+  authUrl?: string
+  podId?: string
+  timeoutMs?: number
+}
+
+const runtimeConfig = (window as Window & { __LEMMA_CONFIG__?: LemmaRuntimeConfig }).__LEMMA_CONFIG__ ?? {}
+const envConfig = import.meta.env
+
+// Shared Lemma client for this app. Lemma-hosted builds inject `window.__LEMMA_CONFIG__`
+// at runtime, while local Vite dev falls back to the usual VITE_* env vars.
 export const lemmaClient = new LemmaClient({
-  apiUrl: import.meta.env.VITE_LEMMA_API_URL,
-  authUrl: import.meta.env.VITE_LEMMA_AUTH_URL,
-  podId: import.meta.env.VITE_LEMMA_POD_ID,
+  apiUrl: runtimeConfig.apiUrl ?? envConfig.VITE_LEMMA_API_URL,
+  authUrl: runtimeConfig.authUrl ?? envConfig.VITE_LEMMA_AUTH_URL,
+  podId: runtimeConfig.podId ?? envConfig.VITE_LEMMA_POD_ID,
+  // ponytail: SDK default is 30s; agent runs (LLM generation) routinely exceed that
+  // under load, so the shared client needs headroom for every LLM-backed call.
+  timeoutMs: runtimeConfig.timeoutMs ?? 90_000,
 })
 
 // ponytail: lemma-sdk's checkAuth() treats any /users/me hiccup (network

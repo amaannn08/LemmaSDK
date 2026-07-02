@@ -1,6 +1,6 @@
 {
   "name": "assistant-agent",
-  "description": "Conversational front door to the Life Command Centre during the hardening rollout. Answers questions about commitments and current priorities, but does not execute product mutations.",
+  "description": "Conversational front door to the Life Command Centre, with full feature parity with the web app: answers questions about commitments, and can create/edit/classify/sync commitments and Gmail drafts via typed tools.",
   "instruction": {
     "$file": "instruction.md"
   },
@@ -9,8 +9,7 @@
   ],
   "visibility": "POD",
   "agent_runtime": {
-    "profile_id": "019f0d02-163c-71ae-838f-57c2d2e925e9",
-    "model_name": "gemini-2.5-flash"
+    "profile_id": "system:lemma", "model_name": "deepseek-chat"
   },
   "permissions": {
     "grants": [
@@ -19,7 +18,139 @@
         "resource_name": "commitments",
         "permission_ids": [
           "datastore.table.read",
-          "datastore.record.read"
+          "datastore.record.read",
+          "datastore.record.write"
+        ]
+      },
+      {
+        "resource_type": "function",
+        "resource_name": "create_new_gmail_draft",
+        "permission_ids": [
+          "function.read",
+          "function.execute"
+        ]
+      },
+      {
+        "resource_type": "connector",
+        "resource_name": "gmail",
+        "permission_ids": [
+          "connector.use"
+        ]
+      },
+      {
+        "resource_type": "connector",
+        "resource_name": "google_calendar",
+        "permission_ids": [
+          "connector.use"
+        ]
+      },
+      {
+        "resource_type": "connector",
+        "resource_name": "google_drive",
+        "permission_ids": [
+          "connector.use"
+        ]
+      },
+      {
+        "resource_type": "connector",
+        "resource_name": "google_docs",
+        "permission_ids": [
+          "connector.use"
+        ]
+      },
+      {
+        "resource_type": "connector",
+        "resource_name": "google_sheets",
+        "permission_ids": [
+          "connector.use"
+        ]
+      },
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "sync_progress",
+        "permission_ids": [
+          "datastore.table.read",
+          "datastore.record.read",
+          "datastore.record.write"
+        ]
+      },
+      {
+        "resource_type": "agent",
+        "resource_name": "email-classifier",
+        "permission_ids": [
+          "agent.execute"
+        ]
+      },
+      {
+        "resource_type": "function",
+        "resource_name": "run_extraction",
+        "permission_ids": [
+          "function.read",
+          "function.execute"
+        ]
+      },
+      {
+        "resource_type": "function",
+        "resource_name": "create_manual_commitment",
+        "permission_ids": [
+          "function.read",
+          "function.execute"
+        ]
+      },
+      {
+        "resource_type": "function",
+        "resource_name": "update_commitment_status",
+        "permission_ids": [
+          "function.read",
+          "function.execute"
+        ]
+      },
+      {
+        "resource_type": "function",
+        "resource_name": "suggest_gmail_reply",
+        "permission_ids": [
+          "function.read",
+          "function.execute"
+        ]
+      },
+      {
+        "resource_type": "function",
+        "resource_name": "create_gmail_draft",
+        "permission_ids": [
+          "function.read",
+          "function.execute"
+        ]
+      },
+      {
+        "resource_type": "function",
+        "resource_name": "edit_calendar_event",
+        "permission_ids": [
+          "function.read",
+          "function.execute"
+        ]
+      },
+      {
+        "resource_type": "function",
+        "resource_name": "create_calendar_event",
+        "permission_ids": [
+          "function.read",
+          "function.execute"
+        ]
+      },
+      {
+        "resource_type": "function",
+        "resource_name": "preview_document",
+        "permission_ids": [
+          "function.read",
+          "function.execute"
+        ]
+      },
+      {
+        "resource_type": "function",
+        "resource_name": "classify_commitments",
+        "permission_ids": [
+          "function.read",
+          "function.execute"
         ]
       }
     ]

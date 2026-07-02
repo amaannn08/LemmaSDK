@@ -1,0 +1,9 @@
+{
+  "name": "create_new_gmail_draft",
+  "description": "Composes a brand-new Gmail draft to an arbitrary recipient — no existing thread or captured commitment required. This path never sends email, only creates a draft for the user to review and send themselves.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "connector", "resource_name": "gmail", "permission_ids": ["connector.use"] }
+  ] }
+}

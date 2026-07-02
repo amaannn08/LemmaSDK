@@ -5,9 +5,9 @@ import { updateCommitmentStatus } from './pod-functions'
 import type { Commitment } from './types'
 
 const PRIORITY_STYLE: Record<Commitment['priority'], string> = {
-  high: 'text-red-400 bg-red-950 border-red-900',
-  normal: 'text-amber-400 bg-amber-950 border-amber-900',
-  low: 'text-zinc-400 bg-zinc-800 border-zinc-700',
+  high: 'text-[#e05c5c] bg-[#fde8e8] border-[#f3c7c7]',
+  normal: 'text-[#b57712] bg-[#fff1d3] border-[#f5dfb0]',
+  low: 'text-[#7b7064] bg-[#f3eee7] border-[#e0d7c9]',
 }
 
 function isOverdue(commitment: Commitment) {
@@ -29,14 +29,18 @@ export function CommitmentItem({
 
   return (
     <div
-      className={`group flex items-start gap-3 ${mode === 'full' ? 'rounded-xl border border-zinc-800 bg-zinc-900 p-4' : 'py-2'}`}
+      className={`group flex items-start gap-3 ${
+        mode === 'full'
+          ? 'rounded-xl border border-[#ece4d8] bg-[#faf7f2] p-4'
+          : 'border-b border-[#f5efe6] py-3 last:border-b-0'
+      }`}
     >
       <span
-        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${overdue ? 'bg-red-500' : commitment.status === 'done' ? 'bg-emerald-500' : 'bg-zinc-500'}`}
+        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${overdue ? 'bg-[#e05c5c]' : commitment.status === 'done' ? 'bg-[#4caf50]' : 'bg-[#b7ab9a]'}`}
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-zinc-100">{commitment.title}</p>
-        <div className="mt-0.5 flex items-center gap-2 text-xs text-zinc-500">
+        <p className="truncate text-sm font-medium text-[#2c261f]">{commitment.title}</p>
+        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[#8d8274]">
           <span className="capitalize">{commitment.source_app.replace('_', ' ')}</span>
           {commitment.due_date ? (
             <span className="inline-flex items-center gap-1">
@@ -44,15 +48,15 @@ export function CommitmentItem({
               {commitment.due_date}
             </span>
           ) : null}
-          {commitment.category === 'recurring' ? <span className="font-medium text-blue-400">Recurring</span> : null}
-          {overdue ? <span className="font-medium text-red-500">Overdue</span> : null}
-          {commitment.status === 'snoozed' ? <span className="font-medium text-amber-500">Snoozed</span> : null}
+          {commitment.category === 'recurring' ? <span className="font-medium text-[#4a90d9]">Recurring</span> : null}
+          {overdue ? <span className="font-medium text-[#e05c5c]">Overdue</span> : null}
+          {commitment.status === 'snoozed' ? <span className="font-medium text-[#b57712]">Snoozed</span> : null}
         </div>
         {mode === 'full' && commitment.description ? (
-          <p className="mt-1 text-xs text-zinc-400">{commitment.description}</p>
+          <p className="mt-1 text-xs text-[#7f7366]">{commitment.description}</p>
         ) : null}
         {mode === 'full' && statusMutation.error ? (
-          <p className="mt-2 text-xs text-red-400">
+          <p className="mt-2 text-xs text-[#e05c5c]">
             {statusMutation.error instanceof Error ? statusMutation.error.message : String(statusMutation.error)}
           </p>
         ) : null}
@@ -67,7 +71,7 @@ export function CommitmentItem({
       {mode === 'full' ? (
         <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           {busy ? (
-            <Loader2 size={14} className="animate-spin text-zinc-500" />
+            <Loader2 size={14} className="animate-spin text-[#8d8274]" />
           ) : (
             <>
               <ActionTrigger commitment={commitment} />
@@ -76,7 +80,7 @@ export function CommitmentItem({
                 aria-label={commitment.status === 'snoozed' ? 'Unsnooze' : 'Snooze'}
                 title={commitment.status === 'snoozed' ? 'Unsnooze' : 'Snooze'}
                 onClick={() => statusMutation.mutate(commitment.status === 'snoozed' ? 'open' : 'snoozed')}
-                className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                className="rounded-md p-1.5 text-[#8d8274] hover:bg-[#f3eee7] hover:text-[#2c261f]"
               >
                 {commitment.status === 'snoozed' ? <RotateCcw size={14} /> : <Clock size={14} />}
               </button>
@@ -85,7 +89,7 @@ export function CommitmentItem({
                 aria-label="Mark done"
                 title="Mark done"
                 onClick={() => statusMutation.mutate('done')}
-                className="rounded-md p-1.5 text-emerald-500 hover:bg-emerald-950"
+                className="rounded-md p-1.5 text-[#4caf50] hover:bg-[#e5f5ea]"
               >
                 <CheckCircle2 size={14} />
               </button>

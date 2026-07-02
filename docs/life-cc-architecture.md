@@ -149,15 +149,14 @@ flowchart LR
 - `pod/workflows/extraction-run/`
   - Workflow wrapper around `run_extraction`.
 - `pod/workflows/gmail-intake/`
-  - Gmail-triggered workflow that also calls `run_extraction`.
+  - Optional webhook workflow that also calls `run_extraction` when an
+    environment provides a usable Gmail trigger.
 - `pod/workflows/briefing-refresh/`
   - `gather_briefing_data -> decision -> briefing-agent -> write_briefing`.
 - `pod/schedules/extraction-sweep/`
   - Optional time-based extraction trigger.
 - `pod/schedules/briefing-refresh/`
   - Optional time-based briefing refresh trigger.
-- `pod/schedules/gmail-trigger/`
-  - Webhook schedule for inbound Gmail-triggered ingestion.
 - `pod/surfaces/telegram/telegram.json`
   - Telegram surface manifest with `is_enabled: false` in the checked-in bundle.
 

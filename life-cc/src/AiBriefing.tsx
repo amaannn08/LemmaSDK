@@ -10,38 +10,38 @@ export function AiBriefing() {
   const { isRunning, text, error, refresh } = useBriefing()
 
   return (
-    <div className="rounded-xl border border-teal-900 bg-linear-to-br from-teal-950/40 to-zinc-900 p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-teal-600">
+    <div className="life-briefing">
+      <div className="life-briefing__header">
+        <div className="life-briefing__mark">
           <Sparkles size={14} className="text-white" />
         </div>
-        <span className="flex-1 text-sm font-bold text-teal-400">Daily Briefing</span>
+        <span className="life-briefing__title">Daily Briefing</span>
         <button
           type="button"
           onClick={refresh}
           disabled={isRunning}
           aria-label="Refresh briefing"
           title="Refresh briefing"
-          className="text-zinc-500 hover:text-zinc-300 disabled:opacity-50"
+          className="text-[#8a8073] hover:text-[#5f5548] disabled:opacity-50"
         >
           <RefreshCw size={14} className={isRunning ? 'animate-spin' : ''} />
         </button>
       </div>
 
       {error ? (
-        <div className="flex items-center gap-2 text-sm text-red-400">
+        <div className="life-inline-status life-inline-status--danger">
           <AlertCircle size={14} />
           {error.message}
         </div>
       ) : isRunning && !text ? (
-        <div className="flex items-center gap-2 text-sm text-zinc-500">
+        <div className="flex items-center gap-2 text-sm text-[#8d8274]">
           <Loader2 size={14} className="animate-spin" />
           Thinking…
         </div>
       ) : !text ? (
-        <div className="text-sm text-zinc-500">No briefing yet. Refresh when you want one.</div>
+        <div className="life-briefing__muted">No briefing yet. Refresh when you want one.</div>
       ) : (
-        <div className="text-sm leading-relaxed text-zinc-300">
+        <div className="life-briefing__body">
           <Markdown text={text} />
         </div>
       )}

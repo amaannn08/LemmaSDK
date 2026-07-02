@@ -13,31 +13,96 @@ export type KpiCardProps = {
 }
 
 const TONE_STYLE: Record<KpiTone, { chip: string; icon: string; badge: string; bar: string }> = {
-  red: { chip: 'bg-red-950', icon: 'text-red-400', badge: 'bg-red-950 text-red-400', bar: 'bg-red-500' },
-  amber: { chip: 'bg-amber-950', icon: 'text-amber-400', badge: 'bg-amber-950 text-amber-400', bar: 'bg-amber-500' },
-  gold: { chip: 'bg-yellow-950', icon: 'text-yellow-400', badge: 'bg-yellow-950 text-yellow-400', bar: 'bg-yellow-500' },
-  blue: { chip: 'bg-blue-950', icon: 'text-blue-400', badge: 'bg-blue-950 text-blue-400', bar: 'bg-blue-500' },
-  zinc: { chip: 'bg-zinc-800', icon: 'text-zinc-400', badge: 'bg-zinc-800 text-zinc-400', bar: 'bg-zinc-500' },
+  red: { chip: 'life-kpi-card__icon--rose', icon: 'text-[#e05c5c]', badge: 'life-kpi-card__badge--rose', bar: 'bg-[#e05c5c]' },
+  amber: { chip: 'life-kpi-card__icon--gold', icon: 'text-[#f5a623]', badge: 'life-kpi-card__badge--gold', bar: 'bg-[#f5a623]' },
+  gold: { chip: 'life-kpi-card__icon--gold', icon: 'text-[#c28a33]', badge: 'life-kpi-card__badge--gold', bar: 'bg-[#c8a882]' },
+  blue: { chip: 'life-kpi-card__icon--blue', icon: 'text-[#4a90d9]', badge: 'life-kpi-card__badge--blue', bar: 'bg-[#4a90d9]' },
+  zinc: { chip: 'bg-[#f1ece4]', icon: 'text-[#7b7064]', badge: 'life-kpi-card__badge--muted', bar: 'bg-[#8c8274]' },
+}
+
+function MiniVisual({ tone }: { tone: KpiTone }) {
+  if (tone === 'amber') {
+    return (
+      <div className="life-kpi-card__bars">
+        <span style={{ height: '18px' }} />
+        <span style={{ height: '28px' }} />
+        <span style={{ height: '14px' }} />
+        <span style={{ height: '32px' }} />
+        <span style={{ height: '22px' }} />
+        <span style={{ height: '36px' }} />
+        <span style={{ height: '20px' }} />
+      </div>
+    )
+  }
+
+  if (tone === 'gold') {
+    return (
+      <div className="life-kpi-card__dots">
+        <span />
+        <span />
+        <span />
+        <span className="is-empty" />
+        <span className="is-empty" />
+        <span className="is-empty" />
+        <span className="is-empty" />
+        <span className="is-empty" />
+        <span className="is-empty" />
+        <span className="is-empty" />
+      </div>
+    )
+  }
+
+  const stroke = tone === 'red' ? '#e05c5c' : '#4a90d9'
+  const fill = tone === 'red' ? 'rgba(224,92,92,0.18)' : 'rgba(74,144,217,0.18)'
+
+  return (
+    <svg className="life-kpi-card__sparkline" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true">
+      <path
+        d="M0,30 C10,28 20,35 30,25 C40,15 50,30 60,20 C70,10 80,22 90,18 C100,14 110,20 120,15"
+        fill="none"
+        stroke={stroke}
+        strokeWidth="2"
+      />
+      <path
+        d="M0,30 C10,28 20,35 30,25 C40,15 50,30 60,20 C70,10 80,22 90,18 C100,14 110,20 120,15 L120,40 L0,40 Z"
+        fill={fill}
+      />
+      <circle cx="0" cy="30" r="3" fill={stroke} />
+    </svg>
+  )
 }
 
 export function KpiCard({ icon: Icon, tone, value, label, sublabel, badgeText, progressPercent }: KpiCardProps) {
   const style = TONE_STYLE[tone]
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 transition-shadow hover:shadow-lg hover:shadow-black/20">
-      <div className="mb-3 flex items-center justify-between">
-        <div className={`flex h-8 w-8 items-center justify-center rounded-md ${style.chip}`}>
+    <div
+      className={`life-kpi-card ${
+        tone === 'red'
+          ? 'life-kpi-card--rose'
+          : tone === 'blue'
+            ? 'life-kpi-card--blue'
+            : tone === 'gold'
+              ? 'life-kpi-card--green'
+              : 'life-kpi-card--gold'
+      }`}
+    >
+      <div className="mb-2 flex items-center justify-between">
+        <div className={`life-kpi-card__icon ${style.chip}`}>
           <Icon size={16} className={style.icon} />
         </div>
-        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${style.badge}`}>{badgeText}</span>
+        <span className={`life-kpi-card__badge ${style.badge}`}>{badgeText}</span>
       </div>
-      <div className="text-2xl font-bold leading-none tracking-tight tabular-nums text-zinc-50">{value}</div>
-      <div className="mt-1 text-xs font-medium text-zinc-400">{label}</div>
-      <div className="mt-0.5 text-xs text-zinc-600">{sublabel}</div>
-      <div className="mt-2 h-1 overflow-hidden rounded-full bg-zinc-800">
-        <div
-          className={`h-full rounded-full ${style.bar}`}
-          style={{ width: `${Math.max(0, Math.min(100, progressPercent))}%` }}
-        />
+      <div className="life-kpi-card__value">{value}</div>
+      <div className="life-kpi-card__label">{label}</div>
+      <div className="life-kpi-card__sublabel">{sublabel}</div>
+      <div className="life-kpi-card__chart">
+        <MiniVisual tone={tone} />
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#f0e8dd]">
+          <div
+            className={`h-full rounded-full ${style.bar}`}
+            style={{ width: `${Math.max(0, Math.min(100, progressPercent))}%` }}
+          />
+        </div>
       </div>
     </div>
   )

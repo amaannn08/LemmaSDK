@@ -6,6 +6,8 @@ export type CommitmentStatus = 'open' | 'done' | 'snoozed'
 
 export type Priority = 'low' | 'normal' | 'high'
 
+export type ClassifyStatus = 'unclassified' | 'classified' | 'not_actionable'
+
 export type SourceApp =
   | 'gmail'
   | 'google_calendar'
@@ -25,6 +27,8 @@ export type Commitment = {
   priority: Priority
   category: Category | null
   detected_at: string
+  classify_status: ClassifyStatus
+  raw_snippet: string | null
 }
 
 export const CATEGORY_LABEL: Record<Category, string> = {

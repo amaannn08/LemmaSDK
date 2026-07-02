@@ -82,8 +82,10 @@ def try_connector_operations(
 
 def drive_preview_candidates(source_ref: str) -> list[tuple[str, list[dict[str, Any]]]]:
     return [
-        ("GOOGLEDRIVE_GET_FILE_CONTENT", [{"fileId": source_ref}, {"file_id": source_ref}, {"id": source_ref}]),
-        ("GOOGLEDRIVE_GET_FILE", [{"fileId": source_ref}, {"file_id": source_ref}, {"id": source_ref}]),
+        # ponytail: Drive's real content-download op only returns an S3 link to the
+        # raw file (no extractable text for arbitrary formats like PDF), so preview
+        # here means file metadata + a link to open it, not inline document text.
+        ("GOOGLEDRIVE_GET_FILE_METADATA", [{"file_id": source_ref}, {"fileId": source_ref}, {"id": source_ref}]),
         ("files_get", [{"fileId": source_ref}, {"file_id": source_ref}, {"id": source_ref}]),
     ]
 
@@ -91,7 +93,6 @@ def drive_preview_candidates(source_ref: str) -> list[tuple[str, list[dict[str, 
 def docs_preview_candidates(source_ref: str) -> list[tuple[str, list[dict[str, Any]]]]:
     return [
         ("GOOGLEDOCS_GET_DOCUMENT_BY_ID", [{"documentId": source_ref}, {"id": source_ref}]),
-        ("GOOGLEDOCS_GET_DOCUMENT", [{"documentId": source_ref}, {"id": source_ref}]),
         ("documents_get", [{"documentId": source_ref}, {"document_id": source_ref}, {"id": source_ref}]),
     ]
 
@@ -106,20 +107,12 @@ def sheets_preview_candidates(source_ref: str) -> list[tuple[str, list[dict[str,
             ],
         ),
         (
-            "spreadsheets_get",
+            "GOOGLESHEETS_VALUES_GET",
             [
-                {"spreadsheet_id": source_ref, "ranges": ["A1:Z200"], "include_grid_data": True},
-                {"spreadsheetId": source_ref, "ranges": ["A1:Z200"], "includeGridData": True},
-            ],
-        ),
-        (
-            "GOOGLESHEETS_GET_VALUES",
-            [
-                {"spreadsheetId": source_ref, "range": "A1:Z200"},
                 {"spreadsheet_id": source_ref, "range": "A1:Z200"},
+                {"spreadsheetId": source_ref, "range": "A1:Z200"},
             ],
         ),
-        ("GOOGLESHEETS_GET_SPREADSHEET", [{"spreadsheetId": source_ref}, {"spreadsheet_id": source_ref}, {"id": source_ref}]),
     ]
 
 
@@ -167,22 +160,29 @@ def format_sheet_values(result: dict[str, Any]) -> str:
 
 
 def format_preview_result(source_app: str, result: dict[str, Any], fallback_title: str) -> str:
+    # Composio operations wrap their real payload under "data" ({"data": ..., "successful": bool});
+    # LEMMA-native operations return the payload directly. Unwrap "data" when present.
+    payload = result.get("data") if isinstance(result.get("data"), dict) else result
     if source_app == "google_docs":
-        text = flatten_doc_text(result.get("body") or result)
+        text = flatten_doc_text(payload.get("body") or payload)
         return clip(text or fallback_title, 8000)
     if source_app == "google_sheets":
-        text = format_sheet_values(result)
+        text = format_sheet_values(payload)
         return clip(text or fallback_title, 8000)
     text = (
-        result.get("content")
-        or result.get("text")
-        or result.get("body")
-        or result.get("description")
-        or result.get("webViewLink")
-        or result.get("alternateLink")
-        or fallback_title
+        payload.get("content")
+        or payload.get("text")
+        or payload.get("body")
+        or payload.get("description")
+        or payload.get("webViewLink")
+        or payload.get("alternateLink")
     )
-    return clip(text, 8000)
+    if text:
+        return clip(text, 8000)
+    link = payload.get("display_url")
+    if link:
+        return f"{fallback_title}\n\n(No inline preview for this file — [open it in Google Drive]({link}).)"
+    return clip(fallback_title, 8000)
 
 
 class PreviewDocumentInput(BaseModel):
@@ -202,14 +202,25 @@ async def preview_document(
     commitment = get_commitment_record(pod, data.commitment_id)
     source_app = commitment.get("source_app")
     source_ref = commitment.get("source_ref")
+    fallback_title = commitment.get("title") or "Document preview"
     if not source_ref or source_app not in {"google_drive", "google_docs", "google_sheets"}:
         raise ValueError("preview_document only supports Drive, Docs, and Sheets commitments")
-    if source_app == "google_docs":
-        result, operation_name = try_connector_operations(pod, "google_docs", docs_preview_candidates(source_ref))
-    elif source_app == "google_sheets":
-        result, operation_name = try_connector_operations(pod, "google_sheets", sheets_preview_candidates(source_ref))
-    else:
-        result, operation_name = try_connector_operations(pod, "google_drive", drive_preview_candidates(source_ref))
+    try:
+        if source_app == "google_docs":
+            result, operation_name = try_connector_operations(pod, "google_docs", docs_preview_candidates(source_ref))
+        elif source_app == "google_sheets":
+            result, operation_name = try_connector_operations(pod, "google_sheets", sheets_preview_candidates(source_ref))
+        else:
+            result, operation_name = try_connector_operations(pod, "google_drive", drive_preview_candidates(source_ref))
+    except Exception:
+        # ponytail: some files genuinely can't be previewed this way (e.g. an
+        # uploaded .xlsx isn't a real Sheets-API-backed spreadsheet) — degrade
+        # to a plain fallback instead of failing the whole preview action.
+        return PreviewDocumentOutput(
+            content=f"{fallback_title}\n\n(Preview isn't available for this file — open it directly in Google Drive.)",
+            source_app=source_app,
+            operation_name="none",
+        )
     return PreviewDocumentOutput(
         content=format_preview_result(source_app, result, commitment.get("title") or "Document preview"),
         source_app=source_app,

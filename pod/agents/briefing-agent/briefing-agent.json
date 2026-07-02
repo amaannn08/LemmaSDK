@@ -4,7 +4,7 @@
   "instruction": { "$file": "instruction.md" },
   "toolsets": ["POD"],
   "visibility": "POD",
-  "agent_runtime": { "profile_id": "019f0d02-163c-71ae-838f-57c2d2e925e9", "model_name": "gemini-2.5-flash" },
+  "agent_runtime": { "profile_id": "system:lemma", "model_name": "deepseek-chat" },
   "output_schema": {
     "type": "object",
     "properties": {

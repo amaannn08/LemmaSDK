@@ -1,0 +1,1 @@
+{"name": "debug_gym_rows", "type": "JOB", "code": {"$file": "code.py"}, "permissions": {"grants": [{"resource_type": "datastore_table", "resource_name": "commitments", "permission_ids": ["datastore.table.read", "datastore.record.read"]}]}}

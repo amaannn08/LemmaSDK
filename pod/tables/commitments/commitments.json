@@ -21,7 +21,12 @@
     { "name": "category", "type": "ENUM",
       "options": ["loop", "deadline", "recurring", "document", "followup"],
       "description": "Open Loop / Deadline / Recurring Task / Document / Follow-up — drives which sidebar section this shows up in" },
-    { "name": "detected_at", "type": "DATETIME", "required": true }
+    { "name": "detected_at", "type": "DATETIME", "required": true },
+    { "name": "classify_status", "type": "ENUM", "required": true, "default": "unclassified",
+      "options": ["unclassified", "classified", "not_actionable"],
+      "description": "Gmail rows start unclassified; Calendar/Drive rows are written as classified immediately since their classification is already deterministic." },
+    { "name": "raw_snippet", "type": "TEXT", "max_length": 480,
+      "description": "Raw email snippet/body preview, captured before LLM classification runs — shown in the unclassified inbox strip." }
   ],
   "config": {}
 }

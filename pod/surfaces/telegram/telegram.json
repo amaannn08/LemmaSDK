@@ -3,5 +3,5 @@
   "platform": "TELEGRAM",
   "default_agent_name": "assistant-agent",
   "credential_mode": "SYSTEM",
-  "is_enabled": false
+  "is_enabled": true
 }

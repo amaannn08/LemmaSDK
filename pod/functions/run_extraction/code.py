@@ -212,8 +212,8 @@ def _fetch_message_metadata(pod: Pod, msg_id: str) -> dict[str, Any] | None:
         return None
 
 
-def fetch_gmail(pod: Pod) -> list[dict[str, Any]]:
-    # ponytail: GMAIL_FETCH_EMAILS doesn't exist in LEMMA connector; use list+get pattern
+def _fetch_gmail_lemma(pod: Pod) -> list[dict[str, Any]]:
+    # ponytail: LEMMA gmail has no single fetch-with-metadata op; list ids then get each
     list_result = connector_result(execute_connector(
         pod, "gmail", "messages_list",
         {"user_id": "me", "q": GMAIL_LOOKBACK_QUERY, "max_results": 20},
@@ -225,6 +225,39 @@ def fetch_gmail(pod: Pod) -> list[dict[str, Any]]:
         if msg:
             messages.append(msg)
     return messages
+
+
+def _fetch_gmail_composio(pod: Pod) -> list[dict[str, Any]]:
+    result = connector_result(execute_connector(
+        pod, "gmail", "GMAIL_FETCH_EMAILS",
+        {"user_id": "me", "query": GMAIL_LOOKBACK_QUERY, "max_results": 20,
+         "verbose": False, "include_payload": False},
+    ))
+    data = result.get("data") or result
+    return [
+        {
+            "messageId": m.get("messageId"),
+            "subject":   m.get("subject") or "(no subject)",
+            "sender":    m.get("sender") or "",
+            "date":      m.get("messageTimestamp") or "",
+            "labelIds":  m.get("labelIds") or [],
+            "preview":   {"body": m.get("messageText") or ""},
+        }
+        for m in (data.get("messages") or [])
+    ]
+
+
+def fetch_gmail(pod: Pod) -> list[dict[str, Any]]:
+    # LEMMA and COMPOSIO gmail connectors expose different operation names
+    # (local uses LEMMA, cloud uses COMPOSIO) — try LEMMA's shape first, fall
+    # back to COMPOSIO's single-call fetch.
+    try:
+        return _fetch_gmail_lemma(pod)
+    except Exception as lemma_error:
+        try:
+            return _fetch_gmail_composio(pod)
+        except Exception:
+            raise lemma_error
 
 
 def fetch_calendar(pod: Pod) -> list[dict[str, Any]]:
@@ -344,6 +377,25 @@ def is_not_connected_error(error_text: str) -> bool:
     return any(marker in text for marker in NOT_CONNECTED_MARKERS)
 
 
+def caller_owns_account(pod: Pod, connector: str, user_id: str) -> bool:
+    # Connector account resolution in this runtime does not reliably reject a
+    # caller with no account of their own — it can fall back to whichever
+    # account is connected pod-wide (e.g. the one Gmail account an admin
+    # connected). Without this check, any pod member who never connected their
+    # own Gmail/Calendar/Drive still gets *someone else's* real inbox/calendar/
+    # drive content written into commitments rows tagged as their own.
+    if not user_id:
+        return False
+    for alias in CONNECTOR_ALIASES.get(connector, [connector]):
+        try:
+            accounts = pod.connectors.accounts.list(app=alias).to_dict().get("items", [])
+        except Exception:
+            continue
+        if any(str(a.get("user_id")) == user_id and a.get("status") == "CONNECTED" for a in accounts):
+            return True
+    return False
+
+
 def summarize_categories(category_counts: dict[str, int], sample_title: str | None) -> str:
     parts = [f"{count} {category}{'s' if count > 1 else ''}" for category, count in category_counts.items()]
     summary = ", ".join(parts) if parts else "nothing new"
@@ -352,7 +404,9 @@ def summarize_categories(category_counts: dict[str, int], sample_title: str | No
     return clip(summary, 240)
 
 
-def to_commitment_row(normalized: dict[str, Any], now_iso: str) -> dict[str, Any]:
+def to_commitment_row(
+    normalized: dict[str, Any], now_iso: str, classify_status: str = "classified"
+) -> dict[str, Any]:
     return {
         "title": normalized["title"],
         "description": normalized.get("description"),
@@ -364,12 +418,25 @@ def to_commitment_row(normalized: dict[str, Any], now_iso: str) -> dict[str, Any
         "priority": normalized.get("priority") or "normal",
         "category": normalized["category"],
         "detected_at": now_iso,
+        "classify_status": classify_status,
     }
 
 
 def duplicate_error(error: Exception) -> bool:
     text = str(error).lower()
     return "unique" in text or "duplicate" in text or "dedup_key" in text or "conflict" in text
+
+
+def existing_source_refs(pod: Pod, source_app: str) -> set[str]:
+    # ponytail: 500-row cap, no pagination — a miss here just costs one wasted
+    # write attempt (dedup_key's unique constraint still blocks the duplicate).
+    # Add pagination if a single account's commitments ever exceed this.
+    rows = pod.records.list(
+        "commitments",
+        limit=500,
+        filter=[{"field": "source_app", "op": "eq", "value": source_app}],
+    ).to_dict()["items"]
+    return {row["source_ref"] for row in rows if row.get("source_ref")}
 
 
 def ensure_progress_rows(pod: Pod, run_id: str) -> dict[str, str]:
@@ -418,7 +485,9 @@ def update_progress_row(
     pod.table("sync_progress").update(row_id, payload)
 
 
-def run_extraction_sweep(pod: Pod, user_email: str = "", run_id: str | None = None) -> dict[str, Any]:
+def run_extraction_sweep(
+    pod: Pod, user_email: str = "", run_id: str | None = None, user_id: str = ""
+) -> dict[str, Any]:
     progress_rows = ensure_progress_rows(pod, run_id) if run_id else {}
     sources_summary: dict[str, dict[str, Any]] = {}
     total_seen = 0
@@ -442,35 +511,81 @@ def run_extraction_sweep(pod: Pod, user_email: str = "", run_id: str | None = No
         sample_title: str | None = None
         category_counts: dict[str, int] = {}
         try:
-            items = fetch(pod)
-            seen = len(items)
-            total_seen += seen
+            if not caller_owns_account(pod, source_app, user_id):
+                raise RuntimeError(f"not connected: no {source_app} account owned by this user")
             now_iso = now_utc().isoformat()
             seen_keys: set[str] = set()
             if source_app == "gmail":
-                eligible = [m for m in items if not (set(m.get("labelIds") or []) & SKIP_LABELS)]
-                normalized_list = _classify_emails_llm(eligible)
-                pairs: list[tuple[dict, dict | None]] = list(zip(eligible, normalized_list))
-            else:
-                pairs = [(item, classify(item, me)) for item in items]
-            for item, normalized in pairs:
-                if not normalized or not normalized.get("source_ref"):
-                    continue
-                dedup_key = f"{normalized['source_app']}:{normalized['source_ref']}"
-                if dedup_key in seen_keys:
-                    continue
-                seen_keys.add(dedup_key)
-                try:
-                    pod.table("commitments").create(to_commitment_row(normalized, now_iso))
-                    written += 1
-                    total_written += 1
-                    category = normalized["category"]
-                    category_counts[category] = category_counts.get(category, 0) + 1
-                    sample_title = sample_title or normalized["title"]
-                except Exception as row_error:
-                    if duplicate_error(row_error):
+                # Capture is pure for Gmail now: write a row immediately, no LLM call.
+                # classify_commitments (a separate function) does the LLM pass later.
+                already_captured = existing_source_refs(pod, "gmail")
+                items = fetch(pod)
+                eligible = [
+                    m for m in items
+                    if not (set(m.get("labelIds") or []) & SKIP_LABELS)
+                    and m.get("messageId") not in already_captured
+                ]
+                seen = len(eligible)
+                total_seen += seen
+                for msg in eligible:
+                    msg_id = msg.get("messageId")
+                    if not msg_id:
                         continue
-                    raise
+                    dedup_key = f"gmail:{msg_id}"
+                    if dedup_key in seen_keys:
+                        continue
+                    seen_keys.add(dedup_key)
+                    preview = msg.get("preview") or {}
+                    snippet = preview.get("body") or msg.get("messageText") or ""
+                    subject = msg.get("subject") or preview.get("subject") or "(no subject)"
+                    row = {
+                        "title": clip(subject, 240),
+                        "description": None,
+                        "source_app": "gmail",
+                        "source_ref": msg_id,
+                        "dedup_key": dedup_key,
+                        "due_date": None,
+                        "status": "open",
+                        "priority": "normal",
+                        "category": None,
+                        "detected_at": now_iso,
+                        "classify_status": "unclassified",
+                        "raw_snippet": clip(snippet, 480),
+                    }
+                    try:
+                        pod.table("commitments").create(row)
+                        written += 1
+                        total_written += 1
+                        sample_title = sample_title or row["title"]
+                    except Exception as row_error:
+                        if duplicate_error(row_error):
+                            continue
+                        raise
+            else:
+                items = fetch(pod)
+                seen = len(items)
+                total_seen += seen
+                pairs = [(item, classify(item, me)) for item in items]
+                for item, normalized in pairs:
+                    if not normalized or not normalized.get("source_ref"):
+                        continue
+                    dedup_key = f"{normalized['source_app']}:{normalized['source_ref']}"
+                    if dedup_key in seen_keys:
+                        continue
+                    seen_keys.add(dedup_key)
+                    try:
+                        pod.table("commitments").create(
+                            to_commitment_row(normalized, now_iso, classify_status="classified")
+                        )
+                        written += 1
+                        total_written += 1
+                        category = normalized["category"]
+                        category_counts[category] = category_counts.get(category, 0) + 1
+                        sample_title = sample_title or normalized["title"]
+                    except Exception as row_error:
+                        if duplicate_error(row_error):
+                            continue
+                        raise
             update_progress_row(
                 pod,
                 row_id,
@@ -548,7 +663,9 @@ class RunExtractionResult(BaseModel):
 
 async def run_extraction(ctx: FunctionContext, data: RunExtractionInput) -> RunExtractionResult:
     pod = Pod.from_env()
-    result = run_extraction_sweep(pod, user_email=ctx.user_email or "", run_id=data.sync_run_id)
+    result = run_extraction_sweep(
+        pod, user_email=ctx.user_email or "", run_id=data.sync_run_id, user_id=str(ctx.user_id)
+    )
     return RunExtractionResult(
         sync_run_id=data.sync_run_id,
         items_seen=result["items_seen"],
@@ -560,4 +677,5 @@ async def run_extraction(ctx: FunctionContext, data: RunExtractionInput) -> RunE
 
 if __name__ == "__main__":
     assert configured_sources() == ["gmail", "google_calendar", "google_drive"]
+    assert caller_owns_account(pod=None, connector="gmail", user_id="") is False
     print("ok")

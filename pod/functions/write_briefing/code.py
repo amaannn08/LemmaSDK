@@ -28,13 +28,23 @@ async def write_briefing(ctx: FunctionContext, data: WriteBriefingInput) -> Writ
     pod = Pod.from_env()
     today = data.briefing_date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     now_iso = datetime.now(timezone.utc).isoformat()
+    existing = pod.records.list(
+        "briefing",
+        limit=1,
+        filter=[{"field": "briefing_date", "op": "eq", "value": today}],
+    ).to_dict()["items"]
+
+    if existing:
+        rid = existing[0]["id"]
+        pod.table("briefing").update(rid, {"content": data.content, "generated_at": now_iso})
+        return WriteBriefingResult(written=True, briefing_id=str(rid))
+
     try:
         rid = pod.table("briefing").create(
             {"briefing_date": today, "content": data.content, "generated_at": now_iso}
         )["id"]
-    except Exception as error:
-        if "unique" not in str(error).lower() and "duplicate" not in str(error).lower():
-            raise
+    except Exception:
+        # Another run may have created today's row between our read and create.
         existing = pod.records.list(
             "briefing",
             limit=1,

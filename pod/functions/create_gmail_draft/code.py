@@ -114,18 +114,15 @@ def internet_message_id(message: dict[str, Any]) -> str | None:
     )
 
 
-def gmail_message_candidates(source_ref: str) -> list[tuple[str, list[dict[str, Any]]]]:
-    return [
-        (
-            "messages_get",
-            [
-                {"user_id": "me", "id": source_ref, "format": "full"},
-                {"user_id": "me", "message_id": source_ref, "format": "full"},
-            ],
-        ),
-        ("GMAIL_GET_MESSAGE", [{"message_id": source_ref}, {"messageId": source_ref}, {"id": source_ref}]),
-        ("GMAIL_FETCH_MESSAGE", [{"message_id": source_ref}, {"messageId": source_ref}, {"id": source_ref}]),
-    ]
+def extract_gmail_message_id(source_ref: str) -> str:
+    # commitments store source_ref as either a bare message id or a Gmail web
+    # link like https://mail.google.com/mail/u/0/#inbox/<id> — the id is always
+    # the last path segment.
+    return source_ref.rsplit("/", 1)[-1]
+
+
+def gmail_message_candidates(message_id: str) -> list[tuple[str, list[dict[str, Any]]]]:
+    return [("GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID", [{"message_id": message_id}])]
 
 
 def gmail_draft_candidates(
@@ -196,7 +193,8 @@ async def create_gmail_draft(
     commitment = get_commitment_record(pod, data.commitment_id)
     if commitment.get("source_app") != "gmail" or not commitment.get("source_ref"):
         raise ValueError("create_gmail_draft only supports Gmail commitments")
-    message, _ = try_connector_operations(pod, "gmail", gmail_message_candidates(commitment["source_ref"]))
+    message_id = extract_gmail_message_id(commitment["source_ref"])
+    message, _ = try_connector_operations(pod, "gmail", gmail_message_candidates(message_id))
     thread_id = message_thread_id(message)
     result, operation_name = try_connector_operations(
         pod,

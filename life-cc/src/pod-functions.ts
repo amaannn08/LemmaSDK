@@ -1,3 +1,4 @@
+import { isTerminalFunctionStatus, nextBackoffDelay, sleep } from 'lemma-sdk'
 import { lemmaClient } from './lemma-client'
 import type { Category, CommitmentStatus, Priority } from './types'
 
@@ -28,9 +29,29 @@ export type EditCalendarEventInput = {
   commitment_id: string
   title?: string
   due_date?: string
+  start_time?: string
+  end_time?: string
+  timezone?: string
   description?: string
   location?: string
   attendees?: string[]
+}
+
+export type CreateCalendarEventInput = {
+  title: string
+  due_date: string
+  start_time?: string
+  end_time?: string
+  timezone?: string
+  description?: string | null
+  location?: string | null
+  attendees?: string[]
+}
+
+export type CreateCalendarEventResult = {
+  commitment_id: string
+  event_id: string
+  message: string
 }
 
 export type RunExtractionInput = {
@@ -41,6 +62,16 @@ export type RunExtractionResult = {
   items_seen?: number
   items_written?: number
   sources?: Record<string, SyncSourceSummary>
+}
+
+export type ClassifyCommitmentsInput = {
+  limit?: number
+}
+
+export type ClassifyCommitmentsResult = {
+  processed?: number
+  classified?: number
+  not_actionable?: number
 }
 
 export type ReplySuggestionContext = {
@@ -84,9 +115,31 @@ function toTextPayload(raw: unknown, emptyMessage: string) {
   throw new Error(emptyMessage)
 }
 
+const FUNCTION_RUN_MAX_WAIT_MS = 5 * 60 * 1000
+
+type FunctionRunEnvelope = LooseFunctionEnvelope<unknown> & { id?: string; status?: string; error?: string | null }
+
+// `functions.run` only *starts* the job — it returns a PENDING envelope with
+// output_data: null almost instantly, not the finished result. Poll runs.get
+// until the run reaches a terminal status before treating it as done, or every
+// caller (Check now, quick-add, mark-done, ...) reports false-instant success.
 async function runPodFunction<TInput extends Record<string, unknown>, TOutput>(name: string, input: TInput): Promise<TOutput> {
-  const raw = await lemmaClient.functions.run(name, { input })
-  return unwrapFunctionOutput(raw as LooseFunctionEnvelope<TOutput>)
+  let run = (await lemmaClient.functions.run(name, { input })) as FunctionRunEnvelope
+  const runId = run.id
+  if (runId) {
+    const deadline = Date.now() + FUNCTION_RUN_MAX_WAIT_MS
+    let attempt = 0
+    while (!isTerminalFunctionStatus(run.status)) {
+      if (Date.now() >= deadline) throw new Error(`${name} timed out waiting for a result.`)
+      await sleep(nextBackoffDelay(attempt))
+      attempt += 1
+      run = (await lemmaClient.functions.runs.get(name, runId)) as FunctionRunEnvelope
+    }
+  }
+  if (run.status === 'FAILED' || run.status === 'CANCELLED') {
+    throw new Error(run.error || `${name} ${run.status.toLowerCase()}`)
+  }
+  return unwrapFunctionOutput(run as LooseFunctionEnvelope<TOutput>)
 }
 
 export function createManualCommitment(input: CreateManualCommitmentInput) {
@@ -109,6 +162,10 @@ export function editCalendarEvent(input: EditCalendarEventInput) {
   return runPodFunction<EditCalendarEventInput, CalendarEditResult>('edit_calendar_event', input)
 }
 
+export function createCalendarEvent(input: CreateCalendarEventInput) {
+  return runPodFunction<CreateCalendarEventInput, CreateCalendarEventResult>('create_calendar_event', input)
+}
+
 export function previewDocument(commitment_id: string): Promise<DocumentPreviewResult> {
   return runPodFunction<{ commitment_id: string }, unknown>('preview_document', { commitment_id }).then((raw) => ({
     content: toTextPayload(raw, 'No document preview returned.'),
@@ -117,6 +174,10 @@ export function previewDocument(commitment_id: string): Promise<DocumentPreviewR
 
 export function runExtraction(input: RunExtractionInput) {
   return runPodFunction<RunExtractionInput, RunExtractionResult>('run_extraction', input)
+}
+
+export function classifyCommitments(input: ClassifyCommitmentsInput) {
+  return runPodFunction<ClassifyCommitmentsInput, ClassifyCommitmentsResult>('classify_commitments', input)
 }
 
 export function refreshBriefing() {

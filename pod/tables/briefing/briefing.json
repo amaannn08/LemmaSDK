@@ -4,8 +4,8 @@
   "enable_rls": true,
   "visibility": "POD",
   "columns": [
-    { "name": "briefing_date", "type": "DATE", "required": true, "unique": true,
-      "description": "The date this briefing covers (one current row per user/day)." },
+    { "name": "briefing_date", "type": "DATE", "required": true,
+      "description": "The date this briefing covers (one current row per user/day — enforced by write_briefing's RLS-scoped find-or-create, not a DB constraint, since `unique` is table-wide and would block every member but the first)." },
     { "name": "content", "type": "TEXT", "required": true,
       "description": "The generated briefing prose, rendered live in the app." },
     { "name": "generated_at", "type": "DATETIME", "required": true,

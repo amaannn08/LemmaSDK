@@ -1,0 +1,11 @@
+{
+  "name": "classify_commitments",
+  "description": "On-demand LLM classification pass over unclassified Gmail-sourced commitments. Processes up to `limit` rows per call, flipping each to classified (with refined title/category/priority/due_date/description) or not_actionable.",
+  "type": "JOB",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] },
+    { "resource_type": "agent", "resource_name": "email-classifier", "permission_ids": ["agent.execute", "agent.read"] }
+  ] }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "cleanup_calendar_dupes",
+  "description": "One-shot: deletes calendar commitment rows that have instance IDs (old pre-fix rows). Keeps only series-ID rows.",
+  "type": "JOB",
+  "code": { "$file": "code.py" },
+  "permissions": { "grants": [
+    { "resource_type": "datastore_table", "resource_name": "commitments",
+      "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"] }
+  ] }
+}

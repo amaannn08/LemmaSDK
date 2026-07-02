@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeOps – Command Centre</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      background: #f0ece4;
+      color: #1a1a1a;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ─── SIDEBAR ─────────────────────────────────────────────── */
+    .sidebar {
+      width: 215px;
+      min-width: 215px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0 0 0;
+      border-right: 1px solid #ece9e2;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 18px 20px 18px;
+      border-bottom: 1px solid #f0ede7;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: #e8f0e8;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text { display: flex; flex-direction: column; }
+    .logo-text strong { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+    .logo-text span { font-size: 10px; color: #999; }
+
+    .sidebar-nav {
+      padding: 12px 0;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 18px;
+      font-size: 13.5px;
+      color: #555;
+      cursor: pointer;
+      border-radius: 0;
+      transition: background 0.15s;
+      text-decoration: none;
+    }
+    .nav-item:hover { background: #f5f2ec; color: #1a1a1a; }
+    .nav-item.active {
+      background: #f0ede7;
+      color: #1a1a1a;
+      font-weight: 600;
+      border-radius: 10px;
+      margin: 0 10px;
+      padding: 9px 10px;
+    }
+    .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; opacity: 0.7; }
+    .nav-item.active svg { opacity: 1; }
+
+    .sidebar-section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px 6px 18px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .sidebar-section-title button {
+      background: none; border: none; cursor: pointer;
+      color: #aaa; font-size: 16px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border-radius: 4px;
+    }
+    .sidebar-section-title button:hover { background: #f0ede7; color: #555; }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 18px;
+      font-size: 13px;
+      color: #444;
+      cursor: pointer;
+    }
+    .list-item:hover { background: #f5f2ec; }
+    .list-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .list-count {
+      margin-left: auto;
+      font-size: 11px;
+      color: #aaa;
+      font-weight: 500;
+    }
+
+    .focus-card {
+      margin: 16px 12px;
+      background: #3d4a3e;
+      border-radius: 14px;
+      padding: 14px 14px 12px 14px;
+      color: #fff;
+    }
+    .focus-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .focus-card-icon {
+      width: 28px; height: 28px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    .focus-card-title { font-size: 13px; font-weight: 700; }
+    .focus-card-sub { font-size: 11px; color: rgba(255,255,255,0.65); margin-bottom: 10px; line-height: 1.4; }
+    .focus-btn {
+      width: 100%;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      border-radius: 8px;
+      padding: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .focus-btn:hover { background: rgba(255,255,255,0.25); }
+
+    .sidebar-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      margin-top: auto;
+      border-top: 1px solid #f0ede7;
+      cursor: pointer;
+    }
+    .user-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #c8a882, #a07850);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 13px; font-weight: 600;
+      overflow: hidden;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-name { font-size: 13px; font-weight: 600; flex: 1; }
+    .user-chevron { color: #aaa; font-size: 12px; }
+
+    .sidebar-bottom-icons {
+      display: flex;
+      gap: 4px;
+      padding: 10px 18px 16px 18px;
+    }
+    .sidebar-bottom-icons button {
+      background: none; border: none; cursor: pointer;
+      color: #aaa; padding: 6px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sidebar-bottom-icons button:hover { background: #f0ede7; color: #555; }
+    .sidebar-bottom-icons svg { width: 16px; height: 16px; }
+
+    /* ─── MAIN CONTENT ────────────────────────────────────────── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 14px 28px 10px 28px;
+      background: #f0ece4;
+    }
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #e8e4dc;
+      border-radius: 10px;
+      padding: 7px 12px;
+      width: 260px;
+      font-size: 13px;
+      color: #aaa;
+    }
+    .search-bar svg { width: 14px; height: 14px; color: #bbb; flex-shrink: 0; }
+    .search-bar span { flex: 1; }
+    .search-kbd {
+      background: #f0ede7;
+      border-radius: 5px;
+      padding: 2px 6px;
+      font-size: 10px;
+      color: #999;
+      font-family: monospace;
+    }
+    .topbar-icon {
+      width: 34px; height: 34px;
+      background: #fff;
+      border: 1px solid #e8e4dc;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: #666;
+    }
+    .topbar-icon:hover { background: #f5f2ec; }
+    .topbar-icon svg { width: 16px; height: 16px; }
+
+    /* Content scroll area */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 28px 28px 28px;
+    }
+
+    /* Page header */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    .page-header-left h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 3px;
+    }
+    .page-header-left p { font-size: 13.5px; color: #888; }
+    .date-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .date-nav span { font-size: 13px; font-weight: 600; color: #444; }
+    .date-nav button {
+      background: #fff;
+      border: 1px solid #e8e4dc;
+      border-radius: 7px;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #666; font-size: 13px;
+    }
+    .date-nav button:hover { background: #f5f2ec; }
+
+    /* ─── STAT CARDS ─────────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px 18px 14px 18px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #ece9e2;
+    }
+    .stat-card:nth-child(1) { background: linear-gradient(145deg, #fff5f5 0%, #fff 60%); }
+    .stat-card:nth-child(2) { background: linear-gradient(145deg, #f0f5ff 0%, #fff 60%); }
+    .stat-card:nth-child(3) { background: linear-gradient(145deg, #f0faf2 0%, #fff 60%); }
+    .stat-card:nth-child(4) { background: linear-gradient(145deg, #fffbf0 0%, #fff 60%); }
+    .stat-card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 6px;
+    }
+    .stat-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .stat-icon.red { background: #fde8e8; }
+    .stat-icon.blue { background: #e5eeff; }
+    .stat-icon.green { background: #e5f5ea; }
+    .stat-icon.yellow { background: #fff8e1; }
+
+    .stat-info { flex: 1; }
+    .stat-number {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-label { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 2px; }
+    .stat-sub { font-size: 11px; color: #aaa; }
+
+    /* Mini charts */
+    .stat-chart { margin-top: 8px; }
+    .mini-line { width: 100%; height: 36px; }
+    .mini-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 36px;
+    }
+    .mini-bar {
+      flex: 1;
+      background: #b8cff5;
+      border-radius: 3px 3px 0 0;
+      min-height: 4px;
+      opacity: 0.75;
+    }
+    .mini-dots {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-top: 8px;
+    }
+    .mini-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #4caf50;
+    }
+    .mini-dot.empty { background: #ddd; }
+
+    /* ─── GRID ────────────────────────────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 320px;
+      gap: 14px;
+    }
+    .col { display: flex; flex-direction: column; gap: 14px; }
+
+    /* Cards */
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px;
+      border: 1px solid #ece9e2;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .card-title { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+    .card-link {
+      font-size: 12px;
+      color: #888;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .card-link:hover { color: #555; text-decoration: underline; }
+
+    /* Agenda */
+    .agenda-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f5f2ec;
+    }
+    .agenda-item:last-of-type { border-bottom: none; }
+    .agenda-time {
+      font-size: 11.5px;
+      color: #aaa;
+      width: 58px;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+    .agenda-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+    .agenda-info { flex: 1; }
+    .agenda-name { font-size: 13px; font-weight: 600; color: #222; }
+    .agenda-cat { font-size: 11px; color: #aaa; }
+    .agenda-line {
+      width: 1px;
+      background: #e8e4dc;
+      position: absolute;
+      left: 76px;
+      top: 0; bottom: 0;
+    }
+    .see-full-day {
+      text-align: center;
+      padding-top: 10px;
+      font-size: 12.5px;
+      color: #888;
+      cursor: pointer;
+    }
+    .see-full-day:hover { color: #555; }
+
+    /* Open Loops */
+    .loop-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f5f2ec;
+    }
+    .loop-item:last-of-type { border-bottom: none; }
+    .loop-checkbox {
+      width: 17px; height: 17px;
+      border: 1.5px solid #ccc;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .loop-info { flex: 1; }
+    .loop-name { font-size: 13px; font-weight: 500; color: #222; margin-bottom: 2px; }
+    .loop-cat { font-size: 11px; color: #aaa; }
+    .loop-date { font-size: 11.5px; color: #aaa; flex-shrink: 0; margin-top: 2px; }
+    .loop-date.urgent { color: #e05c5c; font-weight: 600; }
+
+    /* Deadlines */
+    .deadline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f5f2ec;
+    }
+    .deadline-item:last-of-type { border-bottom: none; }
+    .deadline-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+    .deadline-info { flex: 1; }
+    .deadline-name { font-size: 13px; font-weight: 500; color: #222; margin-bottom: 2px; }
+    .deadline-cat { font-size: 11px; color: #aaa; }
+    .deadline-date { font-size: 11.5px; color: #aaa; flex-shrink: 0; margin-top: 2px; }
+
+    /* Reminders */
+    .reminder-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f5f2ec;
+    }
+    .reminder-item:last-of-type { border-bottom: none; }
+    .reminder-circle {
+      width: 17px; height: 17px;
+      border: 1.5px solid #ccc;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .reminder-circle.orange { border-color: #f5a623; }
+    .reminder-circle.green { border-color: #4caf50; }
+    .reminder-info { flex: 1; }
+    .reminder-name { font-size: 13px; font-weight: 600; color: #222; margin-bottom: 2px; }
+    .reminder-time { font-size: 11px; color: #aaa; }
+
+    /* Documents */
+    .doc-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f5f2ec;
+    }
+    .doc-item:last-of-type { border-bottom: none; }
+    .doc-icon {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .doc-icon.green { background: #e5f5ea; }
+    .doc-icon.red { background: #fde8e8; }
+    .doc-icon.blue { background: #e5eeff; }
+    .doc-icon.gray { background: #f0f0f0; }
+    .doc-info { flex: 1; }
+    .doc-name { font-size: 13px; font-weight: 500; color: #222; margin-bottom: 2px; }
+    .doc-updated { font-size: 11px; color: #aaa; }
+
+    /* Quick Capture */
+    .quick-capture .card-header { margin-bottom: 10px; }
+    .quick-capture-dots { color: #bbb; font-size: 16px; letter-spacing: 2px; }
+    .capture-input {
+      width: 100%;
+      border: 1px solid #e8e4dc;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 13px;
+      color: #aaa;
+      background: #faf9f7;
+      outline: none;
+      margin-bottom: 12px;
+    }
+    .capture-input:focus { border-color: #c8c0b0; }
+    .capture-actions {
+      display: flex;
+      gap: 0;
+      justify-content: space-around;
+    }
+    .capture-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #555;
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+    .capture-btn:hover { background: #f5f2ec; }
+    .capture-btn svg { width: 20px; height: 20px; color: #555; }
+
+    /* Quote card */
+    .quote-card {
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      min-height: 170px;
+      border: 1px solid #ece9e2;
+      display: flex;
+    }
+    .quote-bg {
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 52%;
+      background: linear-gradient(160deg, #d8c8b0 0%, #c4a878 40%, #b89060 100%);
+      overflow: hidden;
+    }
+    .quote-bg-inner {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 70% 30%, rgba(180,140,90,0.5) 0%, transparent 60%),
+                  radial-gradient(ellipse at 30% 80%, rgba(140,100,60,0.3) 0%, transparent 50%);
+    }
+    /* Vase illustration */
+    .vase-illustration {
+      position: absolute;
+      right: 6px;
+      bottom: 0;
+      width: 96px;
+      height: 140px;
+    }
+    .quote-content {
+      position: relative;
+      z-index: 1;
+      padding: 20px 16px;
+      width: 52%;
+      background: #ede5d8;
+    }
+    .quote-mark {
+      font-size: 32px;
+      color: #b0a090;
+      line-height: 0.7;
+      margin-bottom: 8px;
+      font-family: Georgia, serif;
+      display: block;
+    }
+    .quote-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2e2418;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    .quote-author {
+      font-size: 11.5px;
+      color: #7a6a5a;
+      font-style: italic;
+    }
+
+    /* SVG mini chart line */
+    .sparkline { width: 100%; height: 40px; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d8d4cc; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🌿</div>
+    <div class="logo-text">
+      <strong>LifeOps</strong>
+      <span>Command Centre</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="nav-item active" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      My Tasks
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Calendar
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Notes
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+      Documents
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      Reminders
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+      Goals
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Review
+    </a>
+  </nav>
+
+  <div class="sidebar-section-title">
+    Lists
+    <button>+</button>
+  </div>
+
+  <div class="list-item">
+    <div class="list-dot" style="background:#e05c5c;"></div>
+    Personal
+    <span class="list-count">12</span>
+  </div>
+  <div class="list-item">
+    <div class="list-dot" style="background:#4a90d9;"></div>
+    Work
+    <span class="list-count">23</span>
+  </div>
+  <div class="list-item">
+    <div class="list-dot" style="background:#4caf50;"></div>
+    Health
+    <span class="list-count">7</span>
+  </div>
+  <div class="list-item">
+    <div class="list-dot" style="background:#9b59b6;"></div>
+    Finances
+    <span class="list-count">8</span>
+  </div>
+  <div class="list-item">
+    <div class="list-dot" style="background:#f5a623;"></div>
+    Learning
+    <span class="list-count">5</span>
+  </div>
+
+  <div class="focus-card">
+    <div class="focus-card-header">
+      <div class="focus-card-icon">🔁</div>
+      <span class="focus-card-title">Focus Mode</span>
+    </div>
+    <div class="focus-card-sub">Minimise noise.<br>Maximise focus.</div>
+    <button class="focus-btn">Start Focus</button>
+  </div>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">P</div>
+    <span class="user-name">Priyanshu</span>
+    <span class="user-chevron">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </span>
+  </div>
+
+  <div class="sidebar-bottom-icons">
+    <button title="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    </button>
+    <button title="Logout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+</aside>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<div class="main">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span>Search anything...</span>
+      <span class="search-kbd">⌘ K</span>
+    </div>
+    <div class="topbar-icon" title="Theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </div>
+    <div class="topbar-icon" title="Notifications">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    </div>
+  </div>
+
+  <!-- Scrollable Content -->
+  <div class="content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Good morning, Priyanshu 👋</h1>
+        <p>Here's what's on your plate today.</p>
+      </div>
+      <div class="date-nav">
+        <button>‹</button>
+        <span>Friday, 30 May</span>
+        <button>›</button>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <!-- Open Loops -->
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-icon red">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e05c5c" stroke-width="2.2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">12</div>
+            <div class="stat-label">Open Loops</div>
+            <div class="stat-sub">Needs your attention</div>
+          </div>
+        </div>
+        <div class="stat-chart">
+          <svg class="sparkline" viewBox="0 0 120 40" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#e05c5c" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#e05c5c" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,30 C10,28 20,35 30,25 C40,15 50,30 60,20 C70,10 80,22 90,18 C100,14 110,20 120,15" fill="none" stroke="#e05c5c" stroke-width="2"/>
+            <path d="M0,30 C10,28 20,35 30,25 C40,15 50,30 60,20 C70,10 80,22 90,18 C100,14 110,20 120,15 L120,40 L0,40 Z" fill="url(#redGrad)"/>
+            <circle cx="0" cy="30" r="3" fill="#e05c5c"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Today -->
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-icon blue">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4a90d9" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">5</div>
+            <div class="stat-label">Today</div>
+            <div class="stat-sub">Tasks due today</div>
+          </div>
+        </div>
+        <div class="stat-chart">
+          <div class="mini-bars">
+            <div class="mini-bar" style="height:18px;"></div>
+            <div class="mini-bar" style="height:28px;"></div>
+            <div class="mini-bar" style="height:14px;"></div>
+            <div class="mini-bar" style="height:32px;"></div>
+            <div class="mini-bar" style="height:22px;"></div>
+            <div class="mini-bar" style="height:36px;"></div>
+            <div class="mini-bar" style="height:20px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recurring -->
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-icon green">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">8</div>
+            <div class="stat-label">Recurring</div>
+            <div class="stat-sub">Tasks this week</div>
+          </div>
+        </div>
+        <div class="stat-chart">
+          <div class="mini-dots">
+            <div class="mini-dot"></div>
+            <div class="mini-dot"></div>
+            <div class="mini-dot"></div>
+            <div class="mini-dot empty"></div>
+            <div class="mini-dot empty"></div>
+            <div class="mini-dot empty"></div>
+            <div class="mini-dot empty"></div>
+            <div class="mini-dot empty"></div>
+            <div class="mini-dot empty"></div>
+            <div class="mini-dot empty"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reminders -->
+      <div class="stat-card">
+        <div class="stat-card-top">
+          <div class="stat-icon yellow">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5a623" stroke-width="2.2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-number">3</div>
+            <div class="stat-label">Reminders</div>
+            <div class="stat-sub">Pending reminders</div>
+          </div>
+        </div>
+        <div class="stat-chart">
+          <svg class="sparkline" viewBox="0 0 120 40" preserveAspectRatio="none">
+            <path d="M0,20 C15,10 25,30 40,20 C55,10 65,28 80,18 C95,8 105,25 120,15" fill="none" stroke="#f5a623" stroke-width="2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+
+      <!-- Column 1 -->
+      <div class="col">
+        <!-- Today's Agenda -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Today's Agenda</span>
+            <a class="card-link" href="#">View Calendar</a>
+          </div>
+
+          <div class="agenda-item">
+            <span class="agenda-time">9:00 AM</span>
+            <div class="agenda-dot" style="background:#4a90d9;"></div>
+            <div class="agenda-info">
+              <div class="agenda-name">Team stand-up</div>
+              <div class="agenda-cat">Work</div>
+            </div>
+          </div>
+          <div class="agenda-item">
+            <span class="agenda-time">10:30 AM</span>
+            <div class="agenda-dot" style="background:#e05c5c;"></div>
+            <div class="agenda-info">
+              <div class="agenda-name">Design review</div>
+              <div class="agenda-cat">Work</div>
+            </div>
+          </div>
+          <div class="agenda-item">
+            <span class="agenda-time">1:00 PM</span>
+            <div class="agenda-dot" style="background:#4caf50;"></div>
+            <div class="agenda-info">
+              <div class="agenda-name">Lunch with Arjun</div>
+              <div class="agenda-cat">Personal</div>
+            </div>
+          </div>
+          <div class="agenda-item">
+            <span class="agenda-time">3:00 PM</span>
+            <div class="agenda-dot" style="background:#4a90d9;"></div>
+            <div class="agenda-info">
+              <div class="agenda-name">Client call</div>
+              <div class="agenda-cat">Work</div>
+            </div>
+          </div>
+          <div class="agenda-item">
+            <span class="agenda-time">5:00 PM</span>
+            <div class="agenda-dot" style="background:#9b59b6;"></div>
+            <div class="agenda-info">
+              <div class="agenda-name">Gym</div>
+              <div class="agenda-cat">Health</div>
+            </div>
+          </div>
+
+          <div class="see-full-day">See full day ∨</div>
+        </div>
+
+        <!-- Upcoming Deadlines -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Upcoming Deadlines</span>
+            <a class="card-link" href="#">View all</a>
+          </div>
+
+          <div class="deadline-item">
+            <div class="deadline-dot" style="background:#4a90d9;"></div>
+            <div class="deadline-info">
+              <div class="deadline-name">Project proposal</div>
+              <div class="deadline-cat">Work</div>
+            </div>
+            <span class="deadline-date">2 Jun</span>
+          </div>
+          <div class="deadline-item">
+            <div class="deadline-dot" style="background:#4caf50;"></div>
+            <div class="deadline-info">
+              <div class="deadline-name">Annual health checkup</div>
+              <div class="deadline-cat">Personal</div>
+            </div>
+            <span class="deadline-date">4 Jun</span>
+          </div>
+          <div class="deadline-item">
+            <div class="deadline-dot" style="background:#f5a623;"></div>
+            <div class="deadline-info">
+              <div class="deadline-name">Tax filing</div>
+              <div class="deadline-cat">Finances</div>
+            </div>
+            <span class="deadline-date">15 Jun</span>
+          </div>
+          <div class="deadline-item">
+            <div class="deadline-dot" style="background:#f5a623;"></div>
+            <div class="deadline-info">
+              <div class="deadline-name">Course assignment</div>
+              <div class="deadline-cat">Learning</div>
+            </div>
+            <span class="deadline-date">20 Jun</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 2 -->
+      <div class="col">
+        <!-- Open Loops -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Open Loops</span>
+            <a class="card-link" href="#">View all</a>
+          </div>
+
+          <div class="loop-item">
+            <div class="loop-checkbox"></div>
+            <div class="loop-info">
+              <div class="loop-name">Follow up with design team on landing page</div>
+              <div class="loop-cat">Work</div>
+            </div>
+            <span class="loop-date urgent">30 May</span>
+          </div>
+          <div class="loop-item">
+            <div class="loop-checkbox"></div>
+            <div class="loop-info">
+              <div class="loop-name">Renew car insurance</div>
+              <div class="loop-cat">Personal</div>
+            </div>
+            <span class="loop-date">31 May</span>
+          </div>
+          <div class="loop-item">
+            <div class="loop-checkbox"></div>
+            <div class="loop-info">
+              <div class="loop-name">Review Q2 budget with finance team</div>
+              <div class="loop-cat">Work</div>
+            </div>
+            <span class="loop-date">2 Jun</span>
+          </div>
+          <div class="loop-item">
+            <div class="loop-checkbox"></div>
+            <div class="loop-info">
+              <div class="loop-name">Book tickets for weekend trip</div>
+              <div class="loop-cat">Personal</div>
+            </div>
+            <span class="loop-date">3 Jun</span>
+          </div>
+          <div class="loop-item">
+            <div class="loop-checkbox"></div>
+            <div class="loop-info">
+              <div class="loop-name">Submit blog post for approval</div>
+              <div class="loop-cat">Work</div>
+            </div>
+            <span class="loop-date">5 Jun</span>
+          </div>
+        </div>
+
+        <!-- Recent Documents -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Recent Documents</span>
+            <a class="card-link" href="#">View all</a>
+          </div>
+
+          <div class="doc-item">
+            <div class="doc-icon green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="doc-info">
+              <div class="doc-name">Q2 Budget.xlsx</div>
+              <div class="doc-updated">Updated 28 May</div>
+            </div>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon red">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e05c5c" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="doc-info">
+              <div class="doc-name">Project Proposal.pdf</div>
+              <div class="doc-updated">Updated 27 May</div>
+            </div>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a90d9" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="doc-info">
+              <div class="doc-name">Meeting Notes – 27 May.docx</div>
+              <div class="doc-updated">Updated 27 May</div>
+            </div>
+          </div>
+          <div class="doc-item">
+            <div class="doc-icon gray">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="doc-info">
+              <div class="doc-name">Blog Draft.md</div>
+              <div class="doc-updated">Updated 25 May</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 3 -->
+      <div class="col">
+        <!-- Reminders -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Reminders</span>
+            <a class="card-link" href="#">View all</a>
+          </div>
+
+          <div class="reminder-item">
+            <div class="reminder-circle"></div>
+            <div class="reminder-info">
+              <div class="reminder-name">Doctor appointment</div>
+              <div class="reminder-time">Tomorrow, 10:00 AM</div>
+            </div>
+          </div>
+          <div class="reminder-item">
+            <div class="reminder-circle orange"></div>
+            <div class="reminder-info">
+              <div class="reminder-name">Credit card bill due</div>
+              <div class="reminder-time">2 Jun, 9:00 AM</div>
+            </div>
+          </div>
+          <div class="reminder-item">
+            <div class="reminder-circle green"></div>
+            <div class="reminder-info">
+              <div class="reminder-name">Call mom</div>
+              <div class="reminder-time">2 Jun, 7:00 PM</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Capture -->
+        <div class="card quick-capture">
+          <div class="card-header">
+            <span class="card-title">Quick Capture</span>
+            <span class="quick-capture-dots">⠿</span>
+          </div>
+          <input class="capture-input" type="text" placeholder="Add a task, note, or reminder..." />
+          <div class="capture-actions">
+            <button class="capture-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+              Task
+            </button>
+            <button class="capture-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Note
+            </button>
+            <button class="capture-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+              Reminder
+            </button>
+            <button class="capture-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+              Document
+            </button>
+          </div>
+        </div>
+
+        <!-- Quote Card -->
+        <div class="quote-card">
+          <div class="quote-bg">
+            <div class="quote-bg-inner"></div>
+            <!-- Vase / plant illustration via SVG -->
+            <svg class="vase-illustration" viewBox="0 0 90 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Stems -->
+              <line x1="45" y1="70" x2="30" y2="20" stroke="#8a7060" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="45" y1="70" x2="50" y2="15" stroke="#8a7060" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="45" y1="70" x2="65" y2="25" stroke="#8a7060" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="45" y1="70" x2="20" y2="35" stroke="#8a7060" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="45" y1="70" x2="70" y2="40" stroke="#8a7060" stroke-width="1.2" stroke-linecap="round"/>
+              <!-- Flower heads (simple ellipses) -->
+              <ellipse cx="30" cy="18" rx="6" ry="9" fill="#c8b090" opacity="0.8"/>
+              <ellipse cx="50" cy="13" rx="5" ry="8" fill="#b8a080" opacity="0.7"/>
+              <ellipse cx="65" cy="23" rx="5" ry="8" fill="#c0a888" opacity="0.75"/>
+              <ellipse cx="20" cy="33" rx="4" ry="7" fill="#b09878" opacity="0.6"/>
+              <ellipse cx="70" cy="38" rx="4" ry="7" fill="#c8b090" opacity="0.65"/>
+              <!-- Vase body -->
+              <path d="M30,70 Q20,80 22,100 Q24,118 45,120 Q66,118 68,100 Q70,80 60,70 Z" fill="#d4b896" opacity="0.9"/>
+              <!-- Vase neck -->
+              <rect x="34" y="65" width="22" height="8" rx="3" fill="#c8a882" opacity="0.9"/>
+              <!-- Vase highlight -->
+              <ellipse cx="35" cy="90" rx="4" ry="12" fill="white" opacity="0.15"/>
+            </svg>
+          </div>
+          <div class="quote-content">
+            <div class="quote-mark">"</div>
+            <div class="quote-text">The secret of getting ahead is getting started.</div>
+            <div class="quote-author">— Mark Twain</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main-grid -->
+  </div><!-- /content -->
+</div><!-- /main -->
+
+</body>
+</html>
